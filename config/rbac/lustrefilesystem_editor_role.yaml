@@ -1,0 +1,24 @@
+# permissions for end users to edit lustrefilesystems.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: lustrefilesystem-editor-role
+rules:
+- apiGroups:
+  - cray.hpe.com
+  resources:
+  - lustrefilesystems
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cray.hpe.com
+  resources:
+  - lustrefilesystems/status
+  verbs:
+  - get

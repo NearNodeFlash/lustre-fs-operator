@@ -33,6 +33,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
+	driver "github.hpe.com/hpe/hpc-rabsw-lustre-csi-driver/pkg/lustre-driver/service"
 	"github.hpe.com/hpe/hpc-rabsw-lustre-fs-operator/api/v1alpha1"
 )
 
@@ -148,7 +149,7 @@ func createOrUpdatePersistentVolume(ctx context.Context, r *LustreFileSystemReco
 
 		pv.Spec.PersistentVolumeSource = corev1.PersistentVolumeSource{
 			CSI: &corev1.CSIPersistentVolumeSource{
-				Driver:       "lustre-csi-nnf.cray.hpe.com",
+				Driver:       driver.Name,
 				FSType:       "lustre",
 				VolumeHandle: fs.Spec.MgsNid + ":/" + fs.Spec.Name,
 			},

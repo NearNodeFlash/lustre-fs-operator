@@ -2,3 +2,10 @@
 # Ignore build and test binaries.
 bin/
 testbin/
+Jenkinsfile
+!**/*.go
+!**/*.mod
+!**/*.sum
+Dockerfile
+.git
+.vscode

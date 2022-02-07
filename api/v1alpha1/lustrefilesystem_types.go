@@ -39,6 +39,11 @@ type LustreFileSystemSpec struct {
 	// MountRoot is the mount path used to access the Lustre file system from a host. Data Movement directives can
 	// reference this field when performing data movement from or to the Lustre file system.
 	MountRoot string `json:"mountRoot"`
+
+	// StorageClassName refers to the StorageClass to use for this
+	// file system.
+	// +kubebuilder:default="nnf-lustre-fs"
+	StorageClassName string `json:"storageClassName,omitempty"`
 }
 
 // LustreFileSystemStatus defines the observed state of LustreFileSystem

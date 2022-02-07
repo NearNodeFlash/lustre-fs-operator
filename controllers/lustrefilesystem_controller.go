@@ -57,8 +57,8 @@ type LustreFileSystemReconciler struct {
 //+kubebuilder:rbac:groups=cray.hpe.com,resources=lustrefilesystems,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=cray.hpe.com,resources=lustrefilesystems/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups=cray.hpe.com,resources=lustrefilesystems/finalizers,verbs=update
-//+kubebuilder:rbac:groups=core,resources=persistentvolumes,verbs=get;list;update;create;patch;delete
-//+kubebuilder:rbac:groups=core,resources=persistentvolumeclaims,verbs=get;list;update;create;patch;delete
+//+kubebuilder:rbac:groups=core,resources=persistentvolumes,verbs=get;list;update;create;patch;delete;watch
+//+kubebuilder:rbac:groups=core,resources=persistentvolumeclaims,verbs=get;list;update;create;patch;delete;watch
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.

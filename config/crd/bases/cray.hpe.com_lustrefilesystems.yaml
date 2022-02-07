@@ -49,7 +49,12 @@ spec:
                 type: string
               name:
                 description: Name is the name of the Lustre file system.
+                maxLength: 8
                 type: string
+            required:
+            - mgsNid
+            - mountRoot
+            - name
             type: object
           status:
             description: LustreFileSystemStatus defines the observed state of LustreFileSystem

@@ -22,6 +22,8 @@ spec:
       labels:
         control-plane: controller-manager
     spec:
+      nodeSelector:
+        cray.nnf.manager: "true"
       securityContext:
         runAsNonRoot: true
       containers:

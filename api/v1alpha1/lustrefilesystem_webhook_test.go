@@ -94,14 +94,9 @@ var _ = Describe("LustreFileSystemWebhook", func() {
 			})
 
 			By("validate 'mgsNid' attribute", func() {
-				By("empty attribute")
-				Expect(k8sClient.Create(context.TODO(), makeInvalid(func(fs *LustreFileSystem) {
-					fs.Spec.MgsNid = ""
-				}))).NotTo(Succeed())
-
 				By("invalid format")
 				Expect(k8sClient.Create(context.TODO(), makeInvalid(func(fs *LustreFileSystem) {
-					fs.Spec.MgsNid = "this_format_is_missing_an_asperand"
+					fs.Spec.MgsNid = "this_format_is_missing_an_ampersand"
 				}))).NotTo(Succeed())
 
 				By("invalid IP address format")

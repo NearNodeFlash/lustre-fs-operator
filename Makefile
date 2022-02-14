@@ -110,7 +110,7 @@ docker-push: ## Push docker image with the manager.
 	${DOCKER} push ${IMG}
 
 kind-push:
-	kind load docker-image --nodes `kubectl get nodes -o json | jq -rM '.items[].metadata.name' | grep -v kind-control-plane | paste -d, -s -` ${IMG}
+	kind load docker-image --nodes `kubectl get nodes -l cray.nnf.manager=true -o json | jq -rM '.items[].metadata.name' | paste -d, -s -` ${IMG}
 
 ##@ Deployment
 

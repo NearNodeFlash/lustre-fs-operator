@@ -18,30 +18,31 @@ import (
 
 var _ = Describe("LustreFileSystemWebhook", func() {
 	var (
-		key                                types.NamespacedName
-		created, retrieved, valid, invalid *LustreFileSystem
+		key                types.NamespacedName
+		created, retrieved *LustreFileSystem
 	)
 
+	BeforeEach(func() {
+		key = types.NamespacedName{
+			Name:      "lustre-fs-example",
+			Namespace: "default",
+		}
+
+		created = &LustreFileSystem{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      key.Name,
+				Namespace: key.Namespace,
+			},
+			Spec: LustreFileSystemSpec{
+				Name:      "foo",
+				MgsNid:    "127.0.0.1@tcp",
+				MountRoot: "/lus/foo",
+			},
+		}
+	})
+
 	Context("Create", func() {
-
-		It("should create an object successfully", func() {
-			key = types.NamespacedName{
-				Name:      "lustre-fs-example",
-				Namespace: "default",
-			}
-
-			created = &LustreFileSystem{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      key.Name,
-					Namespace: key.Namespace,
-				},
-				Spec: LustreFileSystemSpec{
-					Name:      "foo",
-					MgsNid:    "127.0.0.1@tcp",
-					MountRoot: "/lus/foo",
-				},
-			}
-
+		It("should create an object successfully, with IP", func() {
 			By("creating an object")
 			Expect(k8sClient.Create(context.TODO(), created)).To(Succeed())
 
@@ -54,68 +55,42 @@ var _ = Describe("LustreFileSystemWebhook", func() {
 			Expect(k8sClient.Get(context.TODO(), key, created)).ToNot(Succeed())
 		})
 
-		It("should fail validating admission webhooks with invalid values", func() {
-			key = types.NamespacedName{
-				Name:      "lustre-fs-invalid-example",
-				Namespace: "default",
-			}
+		It("should create an object successfully, with hostname", func() {
+			By("creating an object")
+			created.Spec.MgsNid = "localhost@tcp"
+			Expect(k8sClient.Create(context.TODO(), created)).To(Succeed())
 
-			valid = &LustreFileSystem{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      key.Name,
-					Namespace: key.Namespace,
-				},
-				Spec: LustreFileSystemSpec{
-					Name:      "foo",
-					MgsNid:    "172.0.0.1@tcp",
-					MountRoot: "lus/foo",
-				},
-			}
+			retrieved = &LustreFileSystem{}
+			Expect(k8sClient.Get(context.TODO(), key, retrieved)).To(Succeed())
+			Expect(retrieved).To(Equal(created))
 
-			makeInvalid := func(mutate func(fs *LustreFileSystem)) *LustreFileSystem {
-				invalid = &LustreFileSystem{}
-				valid.DeepCopyInto(invalid)
+			By("deleting the object")
+			Expect(k8sClient.Delete(context.TODO(), created)).To(Succeed())
+			Expect(k8sClient.Get(context.TODO(), key, created)).ToNot(Succeed())
+		})
+	})
 
-				mutate(invalid)
+	Context("Negatives", func() {
 
-				return invalid
-			}
+		It("should fail with empty name attribute", func() {
+			created.Spec.Name = ""
+			Expect(k8sClient.Create(context.TODO(), created)).NotTo(Succeed())
+		})
 
-			By("validate 'name' attribute", func() {
-				By("empty attribute")
-				Expect(k8sClient.Create(context.TODO(), makeInvalid(func(fs *LustreFileSystem) {
-					fs.Spec.Name = ""
-				}))).NotTo(Succeed())
+		It("should fail with an overflowing name attribute", func() {
+			created.Spec.Name = "some_really_long_and_invalid_name"
+			Expect(k8sClient.Create(context.TODO(), created)).NotTo(Succeed())
+		})
 
-				By("overflowing attribute")
-				Expect(k8sClient.Create(context.TODO(), makeInvalid(func(fs *LustreFileSystem) {
-					fs.Spec.Name = "some_really_long_and_invalid_name"
-				}))).NotTo(Succeed())
-			})
+		It("should fail with an invalid 'mgsNid' attribute", func() {
+			By("invalid format")
+			created.Spec.MgsNid = "this_format_is_missing_an_ampersand"
+			Expect(k8sClient.Create(context.TODO(), created)).NotTo(Succeed())
+		})
 
-			By("validate 'mgsNid' attribute", func() {
-				By("invalid format")
-				Expect(k8sClient.Create(context.TODO(), makeInvalid(func(fs *LustreFileSystem) {
-					fs.Spec.MgsNid = "this_format_is_missing_an_ampersand"
-				}))).NotTo(Succeed())
-
-				By("invalid IP address format")
-				Expect(k8sClient.Create(context.TODO(), makeInvalid(func(fs *LustreFileSystem) {
-					fs.Spec.MgsNid = "172.0@tcp"
-				}))).NotTo(Succeed())
-
-				By("invalid hostname format")
-				Expect(k8sClient.Create(context.TODO(), makeInvalid(func(fs *LustreFileSystem) {
-					fs.Spec.MgsNid = "this_is_an_invalid_$hostname@tcp"
-				}))).NotTo(Succeed())
-			})
-
-			By("validate 'mountRoot' attribute", func() {
-				By("invalid path")
-				Expect(k8sClient.Create(context.TODO(), makeInvalid(func(fs *LustreFileSystem) {
-					fs.Spec.MountRoot = "mangled\npath\r"
-				}))).NotTo(Succeed())
-			})
+		It("should fail with an invalid 'mountRoot' attribute", func() {
+			created.Spec.MountRoot = "mangled\npath\r"
+			Expect(k8sClient.Create(context.TODO(), created)).NotTo(Succeed())
 		})
 	})
 

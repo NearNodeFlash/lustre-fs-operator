@@ -30,6 +30,7 @@ type LustreFileSystemSpec struct {
 
 	// Name is the name of the Lustre file system.
 	// +kubebuilder:validation:MaxLength:=8
+	// +kubebuilder:validation:MinLength:=1
 	Name string `json:"name"`
 
 	// MgsNid is the NID of the MGS to use for accessing the Lustre file system. The MGS NID is combined with the

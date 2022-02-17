@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: nnf-daffy-lustre
+---
+apiVersion: cray.hpe.com/v1alpha1
+kind: LustreFileSystem
+metadata:
+  name: w0-lustre-fs
+  namespace: nnf-daffy-lustre
+spec:
+  name: w0
+  mgsNid: rabbit-03@tcp
+  mountRoot: /lus/w0

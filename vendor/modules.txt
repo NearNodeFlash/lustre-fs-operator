@@ -128,7 +128,7 @@ github.com/prometheus/procfs/internal/fs
 github.com/prometheus/procfs/internal/util
 # github.com/spf13/pflag v1.0.5
 github.com/spf13/pflag
-# github.hpe.com/hpe/hpc-rabsw-lustre-csi-driver v0.0.0-20211216142843-0b84f0d84e3f
+# github.hpe.com/hpe/hpc-rabsw-lustre-csi-driver v0.0.0-20220217210743-a86c23a50c7a
 ## explicit
 github.hpe.com/hpe/hpc-rabsw-lustre-csi-driver/pkg/lustre-driver/service
 # go.uber.org/atomic v1.7.0

@@ -49,8 +49,10 @@ var _ = Describe("LustreFileSystemWebhook", func() {
 				Namespace: key.Namespace,
 			},
 			Spec: LustreFileSystemSpec{
-				Name:      "foo",
-				MgsNid:    "127.0.0.1@tcp",
+				Name: "foo",
+				MgsNids: []string{
+					"127.0.0.1@tcp",
+				},
 				MountRoot: "/lus/foo",
 			},
 		}
@@ -72,7 +74,7 @@ var _ = Describe("LustreFileSystemWebhook", func() {
 
 		It("should create an object successfully, with hostname", func() {
 			By("creating an object")
-			created.Spec.MgsNid = "localhost@tcp"
+			created.Spec.MgsNids = []string{"localhost@tcp"}
 			Expect(k8sClient.Create(context.TODO(), created)).To(Succeed())
 
 			retrieved = &LustreFileSystem{}
@@ -99,7 +101,7 @@ var _ = Describe("LustreFileSystemWebhook", func() {
 
 		It("should fail with an invalid 'mgsNid' attribute", func() {
 			By("invalid format")
-			created.Spec.MgsNid = "this_format_is_missing_an_ampersand"
+			created.Spec.MgsNids = []string{"this_format_is_missing_an_ampersand"}
 			Expect(k8sClient.Create(context.TODO(), created)).NotTo(Succeed())
 		})
 

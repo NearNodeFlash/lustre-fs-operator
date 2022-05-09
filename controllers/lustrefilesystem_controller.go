@@ -21,6 +21,7 @@ package controllers
 
 import (
 	"context"
+	"strings"
 
 	"github.com/go-logr/logr"
 
@@ -193,7 +194,7 @@ func createOrUpdatePersistentVolume(ctx context.Context, r *LustreFileSystemReco
 			CSI: &corev1.CSIPersistentVolumeSource{
 				Driver:       driver.Name,
 				FSType:       "lustre",
-				VolumeHandle: fs.Spec.MgsNid + ":/" + fs.Spec.Name,
+				VolumeHandle: strings.Join(fs.Spec.MgsNids, ":") + ":/" + fs.Spec.Name,
 			},
 		}
 

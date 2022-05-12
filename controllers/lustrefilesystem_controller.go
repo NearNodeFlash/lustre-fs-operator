@@ -37,8 +37,8 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	driver "github.hpe.com/hpe/hpc-rabsw-lustre-csi-driver/pkg/lustre-driver/service"
-	"github.hpe.com/hpe/hpc-rabsw-lustre-fs-operator/api/v1alpha1"
+	driver "github.com/hewlettpackard/lustre-csi-driver/pkg/lustre-driver/service"
+	"github.com/nearnodeflash/lustre-fs-operator/api/v1alpha1"
 )
 
 const (

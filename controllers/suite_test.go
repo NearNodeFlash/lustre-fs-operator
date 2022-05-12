@@ -34,7 +34,7 @@ import (
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
-	"github.hpe.com/hpe/hpc-rabsw-lustre-fs-operator/api/v1alpha1"
+	"github.com/nearnodeflash/lustre-fs-operator/api/v1alpha1"
 	//+kubebuilder:scaffold:imports
 )
 

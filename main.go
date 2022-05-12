@@ -34,8 +34,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
-	crayhpecomv1alpha1 "github.hpe.com/hpe/hpc-rabsw-lustre-fs-operator/api/v1alpha1"
-	"github.hpe.com/hpe/hpc-rabsw-lustre-fs-operator/controllers"
+	crayhpecomv1alpha1 "github.com/nearnodeflash/lustre-fs-operator/api/v1alpha1"
+	"github.com/nearnodeflash/lustre-fs-operator/controllers"
 	//+kubebuilder:scaffold:imports
 )
 

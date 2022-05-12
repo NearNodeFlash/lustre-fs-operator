@@ -23,6 +23,7 @@ import (
 	"net"
 	"net/url"
 	"path/filepath"
+	"reflect"
 	"strings"
 
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -114,7 +115,14 @@ func (r *LustreFileSystem) validateMountRoot() *field.Error {
 func (r *LustreFileSystem) ValidateUpdate(old runtime.Object) error {
 	lustrefilesystemlog.Info("validate update", "name", r.Name)
 
-	return field.Invalid(field.NewPath("spec"), r.Spec, "specification is immutable")
+	obj := old.(*LustreFileSystem)
+	// Allow metadata to be updated, for things like finalizers,
+	// ownerReferences, and labels, but do not allow Spec to be updated.
+	if !reflect.DeepEqual(r.Spec, obj.Spec) {
+		return field.Invalid(field.NewPath("spec"), r.Spec, "specification is immutable")
+	}
+
+	return nil
 }
 
 // ValidateDelete implements webhook.Validator so a webhook will be registered for the type

@@ -62,8 +62,12 @@ var _ = BeforeSuite(func() {
 
 	By("bootstrapping test environment")
 	testEnv = &envtest.Environment{
-		CRDDirectoryPaths:     []string{filepath.Join("..", "config", "crd", "bases")},
-		ErrorIfCRDPathMissing: true,
+		WebhookInstallOptions: envtest.WebhookInstallOptions{Paths: []string{
+			filepath.Join("..", "config", "webhook"),
+		}},
+		CRDDirectoryPaths:        []string{filepath.Join("..", "config", "crd", "bases")},
+		ErrorIfCRDPathMissing:    true,
+		AttachControlPlaneOutput: true,
 	}
 
 	cfg, err := testEnv.Start()
@@ -86,8 +90,15 @@ var _ = BeforeSuite(func() {
 	//    -looking manager logic to your BeforeSuite() function, so you can register your custom controller to
 	//    run on this test cluster.
 
+	// start webhook server using Manager
+	webhookInstallOptions := &testEnv.WebhookInstallOptions
 	k8sManager, err := ctrl.NewManager(cfg, ctrl.Options{
-		Scheme: scheme.Scheme,
+		Scheme:             testEnv.Scheme,
+		Host:               webhookInstallOptions.LocalServingHost,
+		Port:               webhookInstallOptions.LocalServingPort,
+		CertDir:            webhookInstallOptions.LocalServingCertDir,
+		LeaderElection:     false,
+		MetricsBindAddress: "0",
 	})
 	Expect(err).ToNot(HaveOccurred())
 
@@ -99,6 +110,9 @@ var _ = BeforeSuite(func() {
 
 	k8sClient = k8sManager.GetClient()
 	Expect(k8sClient).NotTo(BeNil())
+
+	err = (&v1alpha1.LustreFileSystem{}).SetupWebhookWithManager(k8sManager)
+	Expect(err).ToNot(HaveOccurred())
 
 	go func() {
 		defer GinkgoRecover()

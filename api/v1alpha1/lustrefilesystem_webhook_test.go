@@ -26,6 +26,7 @@ import (
 	. "github.com/onsi/gomega"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 // These tests are written in BDD-style using Ginkgo framework. Refer to
@@ -33,8 +34,8 @@ import (
 
 var _ = Describe("LustreFileSystemWebhook", func() {
 	var (
-		key                types.NamespacedName
-		created, retrieved *LustreFileSystem
+		key                    types.NamespacedName
+		createdFS, retrievedFS *LustreFileSystem
 	)
 
 	BeforeEach(func() {
@@ -43,7 +44,7 @@ var _ = Describe("LustreFileSystemWebhook", func() {
 			Namespace: "default",
 		}
 
-		created = &LustreFileSystem{
+		createdFS = &LustreFileSystem{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      key.Name,
 				Namespace: key.Namespace,
@@ -56,64 +57,88 @@ var _ = Describe("LustreFileSystemWebhook", func() {
 				MountRoot: "/lus/foo",
 			},
 		}
+
+		retrievedFS = &LustreFileSystem{}
+	})
+
+	AfterEach(func() {
+		if createdFS != nil {
+			Expect(k8sClient.Delete(context.TODO(), createdFS)).To(Succeed())
+			expectedFS := &LustreFileSystem{}
+			Eventually(func() error { // Delete can still return the cached object. Wait until the object is no longer present
+				return k8sClient.Get(context.TODO(), client.ObjectKeyFromObject(createdFS), expectedFS)
+			}).ShouldNot(Succeed())
+		}
 	})
 
 	Context("Create", func() {
 		It("should create an object successfully, with IP", func() {
 			By("creating an object")
-			Expect(k8sClient.Create(context.TODO(), created)).To(Succeed())
-
-			retrieved = &LustreFileSystem{}
-			Expect(k8sClient.Get(context.TODO(), key, retrieved)).To(Succeed())
-			Expect(retrieved).To(Equal(created))
-
-			By("deleting the object")
-			Expect(k8sClient.Delete(context.TODO(), created)).To(Succeed())
-			Expect(k8sClient.Get(context.TODO(), key, created)).ToNot(Succeed())
+			Expect(k8sClient.Create(context.TODO(), createdFS)).To(Succeed())
 		})
 
 		It("should create an object successfully, with hostname", func() {
 			By("creating an object")
-			created.Spec.MgsNids = []string{"localhost@tcp"}
-			Expect(k8sClient.Create(context.TODO(), created)).To(Succeed())
+			createdFS.Spec.MgsNids = []string{"localhost@tcp"}
+			Expect(k8sClient.Create(context.TODO(), createdFS)).To(Succeed())
+		})
 
-			retrieved = &LustreFileSystem{}
-			Expect(k8sClient.Get(context.TODO(), key, retrieved)).To(Succeed())
-			Expect(retrieved).To(Equal(created))
+		It("should allow an update to the metadata", func() {
+			By("creating an object")
+			Expect(k8sClient.Create(context.TODO(), createdFS)).To(Succeed())
 
-			By("deleting the object")
-			Expect(k8sClient.Delete(context.TODO(), created)).To(Succeed())
-			Expect(k8sClient.Get(context.TODO(), key, created)).ToNot(Succeed())
+			Expect(k8sClient.Get(context.TODO(), key, retrievedFS)).To(Succeed())
+
+			By("updating the object")
+			// A finalizer or ownerRef will interfere with
+			// deletion, so set a label, instead.
+			labels := retrievedFS.GetLabels()
+			if labels == nil {
+				labels = make(map[string]string)
+			}
+			labels["fs-label"] = "fs-label"
+			retrievedFS.SetLabels(labels)
+			Expect(k8sClient.Update(context.TODO(), retrievedFS)).To(Succeed())
 		})
 	})
 
 	Context("Negatives", func() {
 
 		It("should fail with empty name attribute", func() {
-			created.Spec.Name = ""
-			Expect(k8sClient.Create(context.TODO(), created)).NotTo(Succeed())
+			createdFS.Spec.Name = ""
+			Expect(k8sClient.Create(context.TODO(), createdFS)).NotTo(Succeed())
+			createdFS = nil
 		})
 
 		It("should fail with an overflowing name attribute", func() {
-			created.Spec.Name = "some_really_long_and_invalid_name"
-			Expect(k8sClient.Create(context.TODO(), created)).NotTo(Succeed())
+			createdFS.Spec.Name = "some_really_long_and_invalid_name"
+			Expect(k8sClient.Create(context.TODO(), createdFS)).NotTo(Succeed())
+			createdFS = nil
 		})
 
 		It("should fail with an invalid 'mgsNid' attribute", func() {
 			By("invalid format")
-			created.Spec.MgsNids = []string{"this_format_is_missing_an_ampersand"}
-			Expect(k8sClient.Create(context.TODO(), created)).NotTo(Succeed())
+			createdFS.Spec.MgsNids = []string{"this_format_is_missing_an_ampersand"}
+			Expect(k8sClient.Create(context.TODO(), createdFS)).NotTo(Succeed())
+			createdFS = nil
 		})
 
 		It("should fail with an invalid 'mountRoot' attribute", func() {
-			created.Spec.MountRoot = "mangled\npath\r"
-			Expect(k8sClient.Create(context.TODO(), created)).NotTo(Succeed())
+			createdFS.Spec.MountRoot = "mangled\npath\r"
+			Expect(k8sClient.Create(context.TODO(), createdFS)).NotTo(Succeed())
+			createdFS = nil
 		})
-	})
 
-	Context("Update", func() {
-		It("should create and update an object successfully", func() {
+		It("should fail to update the spec", func() {
+			By("creating an object")
+			Expect(k8sClient.Create(context.TODO(), createdFS)).To(Succeed())
 
+			retrievedFS = &LustreFileSystem{}
+			Expect(k8sClient.Get(context.TODO(), key, retrievedFS)).To(Succeed())
+
+			By("updating the object")
+			retrievedFS.Spec.MountRoot = "/lus/other_mount"
+			Expect(k8sClient.Update(context.TODO(), retrievedFS)).ToNot(Succeed())
 		})
 	})
 })

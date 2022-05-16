@@ -59,8 +59,6 @@ jobs:
         push: false
         target: ${{ env.TEST_TARGET }}
         tags: ${{ env.HPE_BUILD_REPO }}:${{ env.TESTTAG }}
-        secrets: |
-          "GH_HPETOKEN=${{ secrets.GH_HPETOKEN }}"
 
     - name: Run the Docker image unit tests
       if: ${{ env.DO_TEST == 'true' }}
@@ -72,8 +70,6 @@ jobs:
       with:
         push: false
         tags: ${{ env.HPE_BUILD_REPO }}:${{ env.TAG }}
-        secrets: |
-          "GH_HPETOKEN=${{ secrets.GH_HPETOKEN }}"
 
     - name: Peek at the docker images
       run: docker images

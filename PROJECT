@@ -6,7 +6,7 @@ plugins:
   manifests.sdk.operatorframework.io/v2: {}
   scorecard.sdk.operatorframework.io/v2: {}
 projectName: lustre-fs-operator
-repo: github.com/nearnodeflash/lustre-fs-operator
+repo: github.com/NearNodeFlash/lustre-fs-operator
 resources:
 - api:
     crdVersion: v1
@@ -14,7 +14,7 @@ resources:
   controller: true
   domain: cray.hpe.com
   kind: LustreFileSystem
-  path: github.com/nearnodeflash/lustre-fs-operator/api/v1alpha1
+  path: github.com/NearNodeFlash/lustre-fs-operator/api/v1alpha1
   version: v1alpha1
   webhooks:
     validation: true

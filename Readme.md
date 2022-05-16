@@ -11,7 +11,7 @@ Before opening an issue or pull request, please read the [Contributing] guide.
 This operator was boostrapped using the operator-sdk
 
 ```bash
-operator-sdk init --domain cray.hpe.com --repo github.com/nearnodeflash/lustre-fs-operator
+operator-sdk init --domain cray.hpe.com --repo github.com/NearNodeFlash/lustre-fs-operator
 operator-sdk create api --version v1alpha1 --kind LustreFileSystem --resource --controller
 operator-sdk create webhook --version v1alpha1 --kind LustreFileSystem --programmatic-validation
 ```

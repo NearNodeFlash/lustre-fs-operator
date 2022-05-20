@@ -17,5 +17,5 @@ kind: Kustomization
 
 images:
 - name: controller
-  newName: arti.dev.cray.com/rabsw-docker-master-local/cray-dp-lustre-fs-operator
+  newName: ghcr.io/nearnodeflash/cray-dp-lustre-fs-operator
   newTag: 0.0.1

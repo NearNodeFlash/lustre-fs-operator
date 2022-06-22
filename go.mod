@@ -2,6 +2,8 @@ module github.com/NearNodeFlash/lustre-fs-operator
 
 go 1.16
 
+replace github.com/HewlettPackard/lustre-csi-driver => ../lustre-csi-driver
+
 require (
 	github.com/HewlettPackard/lustre-csi-driver v0.0.0-20220516192757-17ac28565db5
 	github.com/go-logr/logr v0.4.0

@@ -52,7 +52,7 @@ var _ = Describe("LustreFileSystem Controller", func() {
 			},
 			Spec: v1alpha1.LustreFileSystemSpec{
 				Name:             "test",
-				MgsNids:          []string{"172.0.0.1@tcp"},
+				MgsNids:          "172.0.0.1@tcp",
 				MountRoot:        "/lus/test",
 				StorageClassName: "nnf-lustre-fs",
 			},

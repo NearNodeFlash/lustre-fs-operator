@@ -50,10 +50,8 @@ var _ = Describe("LustreFileSystemWebhook", func() {
 				Namespace: key.Namespace,
 			},
 			Spec: LustreFileSystemSpec{
-				Name: "foo",
-				MgsNids: []string{
-					"127.0.0.1@tcp",
-				},
+				Name:      "foo",
+				MgsNids:   "127.0.0.1@tcp",
 				MountRoot: "/lus/foo",
 			},
 		}
@@ -79,7 +77,13 @@ var _ = Describe("LustreFileSystemWebhook", func() {
 
 		It("should create an object successfully, with hostname", func() {
 			By("creating an object")
-			createdFS.Spec.MgsNids = []string{"localhost@tcp"}
+			createdFS.Spec.MgsNids = "localhost@tcp"
+			Expect(k8sClient.Create(context.TODO(), createdFS)).To(Succeed())
+		})
+
+		It("should create an object successfully, with complex nid list", func() {
+			By("creating an object")
+			createdFS.Spec.MgsNids = "localhost@tcp,kingkong@tcp:red@tcp,blue@tcp:cat@tcp"
 			Expect(k8sClient.Create(context.TODO(), createdFS)).To(Succeed())
 		})
 
@@ -118,7 +122,13 @@ var _ = Describe("LustreFileSystemWebhook", func() {
 
 		It("should fail with an invalid 'mgsNid' attribute", func() {
 			By("invalid format")
-			createdFS.Spec.MgsNids = []string{"this_format_is_missing_an_ampersand"}
+			createdFS.Spec.MgsNids = "this_format_is_missing_an_ampersand"
+			Expect(k8sClient.Create(context.TODO(), createdFS)).NotTo(Succeed())
+			createdFS = nil
+		})
+
+		It("should fail with an invalid nid in a complex nid list", func() {
+			createdFS.Spec.MgsNids = "localhost@tcp,kingkong@tcp:red@tcp,this_format_is_missing_an_ampersand"
 			Expect(k8sClient.Create(context.TODO(), createdFS)).NotTo(Succeed())
 			createdFS = nil
 		})

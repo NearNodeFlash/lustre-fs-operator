@@ -1,6 +1,6 @@
 module github.com/NearNodeFlash/lustre-fs-operator
 
-go 1.17
+go 1.19
 
 require (
 	github.com/HewlettPackard/lustre-csi-driver v0.0.0-20220623192103-4ce53adacc95

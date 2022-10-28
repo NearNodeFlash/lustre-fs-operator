@@ -21,34 +21,27 @@ package controllers
 
 import (
 	"context"
-	"time"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	. "github.com/onsi/gomega/gstruct"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/NearNodeFlash/lustre-fs-operator/api/v1alpha1"
 )
 
 var _ = Describe("LustreFileSystem Controller", func() {
-	var (
-		key                types.NamespacedName
-		created, retrieved *v1alpha1.LustreFileSystem
-	)
+
+	var fs *v1alpha1.LustreFileSystem
 
 	BeforeEach(func() {
-		key = types.NamespacedName{
-			Name:      "lustre-fs-example",
-			Namespace: corev1.NamespaceDefault,
-		}
-
-		created = &v1alpha1.LustreFileSystem{
+		fs = &v1alpha1.LustreFileSystem{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      key.Name,
-				Namespace: key.Namespace,
+				Name:      "controller",
+				Namespace: corev1.NamespaceDefault,
 			},
 			Spec: v1alpha1.LustreFileSystemSpec{
 				Name:             "test",
@@ -59,136 +52,185 @@ var _ = Describe("LustreFileSystem Controller", func() {
 		}
 	})
 
-	Context("Create", func() {
-		It("Should create successfully", func() {
-			By("creating the lustre file system")
-			Expect(k8sClient.Create(context.TODO(), created)).To(Succeed())
+	JustBeforeEach(func() {
+		Expect(k8sClient.Create(context.TODO(), fs)).Should(Succeed())
+	})
 
-			By("retrieving created lustre file system")
-			retrieved = &v1alpha1.LustreFileSystem{}
+	JustAfterEach(func() {
+		Expect(k8sClient.Delete(context.TODO(), fs)).Should(Succeed())
+		Eventually(func() error {
+			return k8sClient.Get(context.TODO(), client.ObjectKeyFromObject(fs), fs)
+		}).ShouldNot(Succeed())
+	})
+
+	Context("creates successfully with no namespaces", func() {
+		It("has no accesses", func() {
 			Eventually(func() error {
-				return k8sClient.Get(context.TODO(), key, retrieved)
-			}, "1s").Should(Succeed())
+				return k8sClient.Get(context.TODO(), client.ObjectKeyFromObject(fs), fs)
+			}).Should(Succeed())
 
-			//Expect(retrieved).To(Equal(created)) // retrieved will have TypeMeta which is not provided on create call, but is filled in by kubernetes
-		})
-
-		It("Should have created a persistent volume", func() {
-			pvkey := types.NamespacedName{
-				Name: key.Name + PersistentVolumeSuffix,
-				//Namespace: key.Namespace, // Cluster-scoped resource cannot have a namespace (even if "default")
-			}
-
-			pv := &corev1.PersistentVolume{}
-
-			By("get persistent volume")
-			Eventually(func() error {
-				return k8sClient.Get(context.TODO(), pvkey, pv)
-			}, "3s").Should(Succeed())
-
-			By("and it must have the storage class name set")
-			Expect(pv.Spec.StorageClassName).To(Equal(created.Spec.StorageClassName))
-			By("and it must be reserved for the matching PVC")
-			Expect(pv.Spec.ClaimRef.Name).To(Equal(key.Name + PersistentVolumeClaimSuffix))
-			Expect(pv.Spec.ClaimRef.Namespace).To(Equal(key.Namespace))
-		})
-
-		It("Should have created a persistent volume claim", func() {
-			pvckey := types.NamespacedName{
-				Name:      key.Name + PersistentVolumeClaimSuffix,
-				Namespace: key.Namespace,
-			}
-
-			pvc := &corev1.PersistentVolumeClaim{}
-
-			By("get persistent volume claim")
-			Eventually(func() error {
-				return k8sClient.Get(context.TODO(), pvckey, pvc)
-			}, "3s").Should(Succeed())
-
-			By("and it must have the volume name set")
-			Expect(pvc.Spec.VolumeName).To(Equal(key.Name + PersistentVolumeSuffix))
-			By("and it must have the storage class name set")
-			Expect(*pvc.Spec.StorageClassName).To(Equal(created.Spec.StorageClassName))
+			Expect(fs.Spec.Namespaces).To(HaveLen(0))
+			Expect(fs.Status.Namespaces).To(HaveLen(0))
 		})
 	})
 
-	Context("Delete", func() {
-		It("Deletion of LustreFileSystem should delete the PV", func() {
-			fsDeleter := &v1alpha1.LustreFileSystem{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      key.Name,
-					Namespace: key.Namespace,
-				},
-			}
-			// In finalizer cleanup, the LustreFileSystem resource
-			// will explicitly delete the PV.  The PV does not
-			// have an owner ref, so it isn't cleaned up by
-			// garbage collection.
-			Expect(k8sClient.Delete(context.TODO(), fsDeleter)).To(Succeed())
+	Context("creates successfully with namespace but no mode", func() {
+		const namespace = "dummy-namespace"
 
-			fsKey := types.NamespacedName{
-				Name:      key.Name + PersistentVolumeClaimSuffix,
-				Namespace: key.Namespace,
+		BeforeEach(func() {
+			fs.Spec.Namespaces = map[string]v1alpha1.LustreFileSystemNamespaceSpec{
+				namespace: {},
 			}
-			fs := &v1alpha1.LustreFileSystem{}
-			By("Wait for the LustreFileSystem to be deleted")
-			Eventually(func() error {
-				return k8sClient.Get(context.TODO(), fsKey, fs)
-			}, "3s").ShouldNot(Succeed())
-
-			By("Wait for reconciler to run")
-			time.Sleep(10 * time.Second)
 		})
 
-		PIt("Lifecycle of the PVC", func() {
-
-			// The PVC is owned by the LustreFileSystem resource,
-			// so when running live it will be garbage-collected.
-			// In the test env that garbage collection doesn't
-			// happen.  That means the PV is still hanging around
-			// because it is still bound to the PVC.
-
-			// Unfortunately, in the test environment the PVC
-			// is still hanging around even after that explicit
-			// deletion.
-
-			pvcGarbage := &corev1.PersistentVolumeClaim{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      key.Name + PersistentVolumeClaimSuffix,
-					Namespace: key.Namespace,
-				},
-			}
-			By("Fake garbage collection of the PVC")
-			Expect(k8sClient.Delete(context.TODO(), pvcGarbage)).To(Succeed())
-			time.Sleep(10 * time.Second)
-			By("Confirm the deletion of the PVC")
-			pvckey := types.NamespacedName{
-				Name:      key.Name + PersistentVolumeClaimSuffix,
-				Namespace: key.Namespace,
-			}
-
-			pvc := &corev1.PersistentVolumeClaim{}
+		It("has mode but no namespace accesses", func() {
 			Eventually(func() error {
-				return k8sClient.Get(context.TODO(), pvckey, pvc)
-			}, "10s", "3s").ShouldNot(Succeed())
+				return k8sClient.Get(context.TODO(), client.ObjectKeyFromObject(fs), fs)
+			}).Should(Succeed())
+
+			Expect(fs.Spec.Namespaces).To(HaveKey(namespace))
+			Expect(fs.Spec.Namespaces[namespace].Modes).To(HaveLen(0))
+		})
+	})
+
+	Context("with a dummy namespace", Ordered, func() {
+		const namespace = "dummy-namespace"
+		const mode = corev1.ReadWriteMany
+
+		BeforeAll(func() {
+			ns := &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{
+				Name: namespace,
+			}}
+
+			Expect(k8sClient.Create(context.TODO(), ns)).Should(Succeed())
 		})
 
-		PIt("Lifecycle of the PV", func() {
-			// Now that we've done the fake garbage-collection
-			// of the PVC, the PV should disappear.
+		BeforeEach(func() {
+			// For some reason envtest never actually deletes a namespace, so instead
+			// managing the namespace for each test case, it is done once in the BeforeAll()
+			// Expect(k8sClient.Create(context.TODO(), ns)).Should(Succeed())
+		})
 
-			// Unfortunately, in the test environment the PV is
-			// hanging on.
+		AfterEach(func() {
+			// For some reason envtest can never actually delete a namespace; it gets marked for deletion
+			// but sticks around, even after waiting minutes for it to be removed
+			//Expect(k8sClient.Delete(context.TODO(), ns)).Should(Succeed())
+			//Eventually(k8sClient.Get(context.TODO(), client.ObjectKeyFromObject(ns), ns), "60s").ShouldNot(Succeed())
+		})
 
-			pvkey := types.NamespacedName{
-				Name: key.Name + PersistentVolumeSuffix,
+		validateCreateOccurredFn := func() {
+			Eventually(func(g Gomega) v1alpha1.LustreFileSystemNamespaceAccessStatus {
+				g.Expect(k8sClient.Get(context.TODO(), client.ObjectKeyFromObject(fs), fs)).Should(Succeed())
+				g.Expect(fs.Status.Namespaces).To(HaveKey(namespace))
+				g.Expect(fs.Status.Namespaces[namespace].Modes).To(HaveKey(mode))
+
+				return fs.Status.Namespaces[namespace].Modes[mode]
+			}).Should(MatchAllFields(Fields{
+				"State":                    Equal(v1alpha1.NamespaceAccessReady),
+				"PersistentVolumeRef":      Not(BeNil()),
+				"PersistentVolumeClaimRef": Not(BeNil()),
+			}))
+
+			pv := &corev1.PersistentVolume{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: fs.PersistentVolumeName(namespace, mode),
+				},
 			}
-			pv := &corev1.PersistentVolume{}
-			By("Verify that the PV has been deleted")
-			Eventually(func() error {
-				return k8sClient.Get(context.TODO(), pvkey, pv)
-			}, "10s", "3s").ShouldNot(Succeed())
+
+			Expect(k8sClient.Get(context.TODO(), client.ObjectKeyFromObject(pv), pv)).Should(Succeed())
+
+			pvc := &corev1.PersistentVolumeClaim{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      fs.PersistentVolumeClaimName(namespace, mode),
+					Namespace: namespace,
+				},
+			}
+
+			Expect(k8sClient.Get(context.TODO(), client.ObjectKeyFromObject(pvc), pvc)).Should(Succeed())
+		}
+
+		Context("with namespace and mode on create", func() {
+
+			BeforeEach(func() {
+				fs.Spec.Namespaces = map[string]v1alpha1.LustreFileSystemNamespaceSpec{
+					namespace: {
+						Modes: []corev1.PersistentVolumeAccessMode{
+							mode,
+						},
+					},
+				}
+			})
+
+			It("creates pv/pvc and goes ready", func() {
+				validateCreateOccurredFn()
+			})
+		})
+
+		Context("adding a namespace post create", func() {
+			const mode = corev1.ReadWriteMany
+
+			JustBeforeEach(func() {
+				Eventually(func(g Gomega) error {
+					g.Expect(k8sClient.Get(context.TODO(), client.ObjectKeyFromObject(fs), fs)).Should(Succeed())
+					Expect(fs.Spec.Namespaces).To(BeEmpty())
+
+					fs.Spec.Namespaces = map[string]v1alpha1.LustreFileSystemNamespaceSpec{
+						namespace: {
+							Modes: []corev1.PersistentVolumeAccessMode{
+								mode,
+							},
+						},
+					}
+
+					return k8sClient.Update(context.TODO(), fs)
+				}).Should(Succeed())
+			})
+
+			It("creates pv/pvc and goes ready", func() {
+				validateCreateOccurredFn()
+			})
+
+			It("removes pv/pvc", func() {
+				validateCreateOccurredFn()
+
+				Eventually(func(g Gomega) error {
+					g.Expect(k8sClient.Get(context.TODO(), client.ObjectKeyFromObject(fs), fs)).Should(Succeed())
+					g.Expect(fs.Spec.Namespaces).To(HaveKey(namespace))
+
+					delete(fs.Spec.Namespaces, namespace)
+
+					return k8sClient.Update(context.TODO(), fs)
+				}).Should(Succeed())
+
+				Eventually(func(g Gomega) map[string]v1alpha1.LustreFileSystemNamespaceStatus {
+					g.Expect(k8sClient.Get(context.TODO(), client.ObjectKeyFromObject(fs), fs)).Should(Succeed())
+					return fs.Status.Namespaces
+				}).ShouldNot(HaveKey(namespace))
+
+				// envtest is a piece of shit and doesn't support deletion of PV/PVC resources
+				/*
+					Eventually(func() error {
+						pvc := &corev1.PersistentVolumeClaim{
+							ObjectMeta: metav1.ObjectMeta{
+								Name:      fs.PersistentVolumeClaimName(namespace, mode),
+								Namespace: namespace,
+							},
+						}
+
+						return k8sClient.Get(context.TODO(), client.ObjectKeyFromObject(pvc), pvc)
+					}).ShouldNot(Succeed())
+
+					Eventually(func() error {
+						pv := &corev1.PersistentVolume{
+							ObjectMeta: metav1.ObjectMeta{
+								Name: fs.PersistentVolumeName(namespace, mode),
+							},
+						}
+
+						return k8sClient.Get(context.TODO(), client.ObjectKeyFromObject(pv), pv)
+					}).ShouldNot(Succeed())
+				*/
+			})
 		})
 	})
 })

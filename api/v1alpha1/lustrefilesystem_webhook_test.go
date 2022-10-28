@@ -40,7 +40,7 @@ var _ = Describe("LustreFileSystemWebhook", func() {
 
 	BeforeEach(func() {
 		key = types.NamespacedName{
-			Name:      "lustre-fs-example",
+			Name:      "webhook-test",
 			Namespace: "default",
 		}
 

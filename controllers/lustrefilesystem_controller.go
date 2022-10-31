@@ -112,7 +112,7 @@ func (r *LustreFileSystemReconciler) Reconcile(ctx context.Context, req ctrl.Req
 		return ctrl.Result{}, nil
 	}
 
-	// Iterative over the access modes in the specification. For each namespace in that mode
+	// Iterate over the access modes in the specification. For each namespace in that mode
 	// create a PV/PVC which can be used by pods in the same namespace.
 	for namespace := range fs.Spec.Namespaces {
 
@@ -304,7 +304,7 @@ func (r *LustreFileSystemReconciler) deleteAccess(ctx context.Context, fs *v1alp
 		},
 	}
 
-	log.FromContext(ctx).Info("Deleting PersistentVolume", "object", client.ObjectKeyFromObject(pvc).String())
+	log.FromContext(ctx).Info("Deleting PersistentVolumeClaim", "object", client.ObjectKeyFromObject(pvc).String())
 	if err := r.Delete(ctx, pvc); err != nil {
 		if !errors.IsNotFound(err) {
 			return err
@@ -317,7 +317,7 @@ func (r *LustreFileSystemReconciler) deleteAccess(ctx context.Context, fs *v1alp
 		},
 	}
 
-	log.FromContext(ctx).Info("Deleting PersistentVolumeClaim", "object", client.ObjectKeyFromObject(pv).String())
+	log.FromContext(ctx).Info("Deleting PersistentVolume", "object", client.ObjectKeyFromObject(pv).String())
 	if err := r.Delete(ctx, pv); err != nil {
 		if !errors.IsNotFound(err) {
 			return err

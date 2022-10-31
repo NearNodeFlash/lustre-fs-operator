@@ -97,25 +97,26 @@ var _ = Describe("LustreFileSystem Controller", func() {
 		const namespace = "dummy-namespace"
 		const mode = corev1.ReadWriteMany
 
+		/*
+			For some reason envtest never actually deletes a namespace, so instead of managing the
+			namespace for each test case, it is done once in the BeforeAll() below.
+
+			BeforeEach(func() {
+				Expect(k8sClient.Create(context.TODO(), ns)).Should(Succeed())
+			})
+
+			AfterEach(func() {
+				Expect(k8sClient.Delete(context.TODO(), ns)).Should(Succeed())
+				Eventually(k8sClient.Get(context.TODO(), client.ObjectKeyFromObject(ns), ns)).ShouldNot(Succeed())
+			})
+		*/
+
 		BeforeAll(func() {
 			ns := &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{
 				Name: namespace,
 			}}
 
 			Expect(k8sClient.Create(context.TODO(), ns)).Should(Succeed())
-		})
-
-		BeforeEach(func() {
-			// For some reason envtest never actually deletes a namespace, so instead
-			// managing the namespace for each test case, it is done once in the BeforeAll()
-			// Expect(k8sClient.Create(context.TODO(), ns)).Should(Succeed())
-		})
-
-		AfterEach(func() {
-			// For some reason envtest can never actually delete a namespace; it gets marked for deletion
-			// but sticks around, even after waiting minutes for it to be removed
-			//Expect(k8sClient.Delete(context.TODO(), ns)).Should(Succeed())
-			//Eventually(k8sClient.Get(context.TODO(), client.ObjectKeyFromObject(ns), ns), "60s").ShouldNot(Succeed())
 		})
 
 		validateCreateOccurredFn := func() {
@@ -207,7 +208,7 @@ var _ = Describe("LustreFileSystem Controller", func() {
 					return fs.Status.Namespaces
 				}).ShouldNot(HaveKey(namespace))
 
-				// envtest is a piece of shit and doesn't support deletion of PV/PVC resources
+				// envtest doesn't support deletion of PV/PVC resources
 				/*
 					Eventually(func() error {
 						pvc := &corev1.PersistentVolumeClaim{

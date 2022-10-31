@@ -119,7 +119,7 @@ func (r *LustreFileSystem) ValidateUpdate(obj runtime.Object) error {
 
 	old := obj.(*LustreFileSystem)
 
-	// Prevent the immutable fields from being update
+	// Prevent the immutable fields from being updated
 	specPath := field.NewPath("Spec")
 
 	if r.Spec.Name != old.Spec.Name {

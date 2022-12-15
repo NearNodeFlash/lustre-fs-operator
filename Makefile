@@ -25,7 +25,7 @@ DOCKER ?= docker
 # To re-generate a bundle for another specific version without changing the standard setup, you can:
 # - use the VERSION as arg of the bundle target (e.g make bundle VERSION=0.0.2)
 # - use environment variables to overwrite this value (e.g export VERSION=0.0.2)
-VERSION ?= $(shell sed 1q .version)
+# NOTE: git-version-gen will generate a value for VERSION, unless you override it.
 
 # CHANNELS define the bundle channels used in the bundle.
 # Add a new line here if you would like to change its default config. (E.g CHANNELS = "candidate,fast,stable")
@@ -55,11 +55,8 @@ IMAGE_TAG_BASE ?= ghcr.io/nearnodeflash/lustre-fs-operator
 
 # BUNDLE_IMG defines the image:tag used for the bundle.
 # You can use it as an arg. (E.g make bundle-build BUNDLE_IMG=<some-registry>/<project-name-bundle>:<tag>)
-BUNDLE_IMG ?= $(IMAGE_TAG_BASE)-bundle:v$(VERSION)
 
 # Image URL to use all building/pushing image targets
-#IMG ?= controller:latest
-IMG ?= $(IMAGE_TAG_BASE):$(VERSION)
 
 # ENVTEST_K8S_VERSION refers to the version of kubebuilder assets to be downloaded by envtest binary.
 ENVTEST_K8S_VERSION = 1.25.0
@@ -166,7 +163,8 @@ vet: ## Run go vet against code.
 #         If set, default reporter print out all specs as they begin.
 #
 
-container-unit-test: ## Build docker image with the manager and execute unit tests.
+container-unit-test: VERSION ?= $(shell cat .version)
+container-unit-test: .version ## Build docker image with the manager and execute unit tests.
 	${DOCKER} build -f Dockerfile --label $(IMAGE_TAG_BASE)-$@:$(VERSION)-$@ -t $(IMAGE_TAG_BASE)-$@:$(VERSION) --target testing .
 	${DOCKER} run --rm -t --name $@-lustre-fs-operator $(IMAGE_TAG_BASE)-$@:$(VERSION)
 
@@ -181,14 +179,17 @@ build: generate fmt vet ## Build manager binary.
 run: manifests generate fmt vet ## Run a controller from your host.
 	go run ./main.go
 
-docker-build: test ## Build docker image with the manager.
-	${DOCKER} build -t ${IMG} .
+docker-build: VERSION ?= $(shell cat .version)
+docker-build: .version test ## Build docker image with the manager.
+	${DOCKER} build -t $(IMAGE_TAG_BASE):$(VERSION) .
 
-docker-push: ## Push docker image with the manager.
-	${DOCKER} push ${IMG}
+docker-push: VERSION ?= $(shell cat .version)
+docker-push: .version ## Push docker image with the manager.
+	${DOCKER} push $(IMAGE_TAG_BASE):$(VERSION)
 
-kind-push:
-	kind load docker-image --nodes `kubectl get nodes -l cray.nnf.manager=true -o json | jq -rM '.items[].metadata.name' | paste -d, -s -` ${IMG}
+kind-push: VERSION ?= $(shell cat .version)
+kind-push: .version
+	kind load docker-image --nodes `kubectl get nodes -l cray.nnf.manager=true -o json | jq -rM '.items[].metadata.name' | paste -d, -s -` $(IMAGE_TAG_BASE):$(VERSION)
 
 ##@ Deployment
 
@@ -198,13 +199,22 @@ install: manifests kustomize ## Install CRDs into the K8s cluster specified in ~
 uninstall: manifests kustomize ## Uninstall CRDs from the K8s cluster specified in ~/.kube/config.
 	$(KUSTOMIZE) build config/crd | kubectl delete -f -
 
-deploy: kustomize ## Deploy controller to the K8s cluster specified in ~/.kube/config.
-	cd config/manager && $(KUSTOMIZE) edit set image controller=${IMG}
+deploy: VERSION ?= $(shell cat .version)
+deploy: .version kustomize ## Deploy controller to the K8s cluster specified in ~/.kube/config.
+	cd config/manager && $(KUSTOMIZE) edit set image controller=$(IMAGE_TAG_BASE):$(VERSION)
 	$(KUSTOMIZE) build config/default | kubectl apply -f -
 
 undeploy: kustomize ## Undeploy controller from the K8s cluster specified in ~/.kube/config.
 	$(KUSTOMIZE) build config/default | kubectl delete -f -
 
+# Let .version be phony so that a git update to the workarea can be reflected
+# in it each time it's needed.
+.PHONY: .version
+.version: ## Uses the git-version-gen script to generate a tag version
+	./git-version-gen --fallback `git rev-parse HEAD` > .version
+
+clean:
+	rm -f .version
 
 ## Location to install dependencies to
 LOCALBIN ?= $(shell pwd)/bin
@@ -244,11 +254,15 @@ bundle: manifests kustomize ## Generate bundle manifests and metadata, then vali
 	operator-sdk bundle validate ./bundle
 
 .PHONY: bundle-build
-bundle-build: ## Build the bundle image.
+bundle-build: VERSION ?= $(shell cat .version)
+bundle-build: BUNDLE_IMG ?= $(IMAGE_TAG_BASE)-bundle:v$(VERSION)
+bundle-build: .version ## Build the bundle image.
 	${DOCKER} build -f bundle.Dockerfile -t $(BUNDLE_IMG) .
 
 .PHONY: bundle-push
-bundle-push: ## Push the bundle image.
+bundle-push: VERSION ?= $(shell cat .version)
+bundle-push: BUNDLE_IMG ?= $(IMAGE_TAG_BASE)-bundle:v$(VERSION)
+bundle-push: .version ## Push the bundle image.
 	$(MAKE) docker-push IMG=$(BUNDLE_IMG)
 
 .PHONY: opm

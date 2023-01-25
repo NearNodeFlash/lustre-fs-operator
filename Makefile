@@ -205,7 +205,7 @@ deploy: .version kustomize ## Deploy controller to the K8s cluster specified in 
 	$(KUSTOMIZE) build config/default | kubectl apply -f -
 
 undeploy: kustomize ## Undeploy controller from the K8s cluster specified in ~/.kube/config.
-	$(KUSTOMIZE) build config/default | kubectl delete -f -
+	$(KUSTOMIZE) build config/default | kubectl delete --ignore-not-found -f -
 
 # Let .version be phony so that a git update to the workarea can be reflected
 # in it each time it's needed.

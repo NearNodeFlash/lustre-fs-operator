@@ -197,7 +197,7 @@ install: manifests kustomize ## Install CRDs into the K8s cluster specified in ~
 	$(KUSTOMIZE) build config/crd | kubectl apply -f -
 
 uninstall: manifests kustomize ## Uninstall CRDs from the K8s cluster specified in ~/.kube/config.
-	$(KUSTOMIZE) build config/crd | kubectl delete -f -
+	$(KUSTOMIZE) build config/crd | kubectl delete --ignore-not-found -f -
 
 deploy: VERSION ?= $(shell cat .version)
 deploy: .version kustomize ## Deploy controller to the K8s cluster specified in ~/.kube/config.
@@ -205,7 +205,7 @@ deploy: .version kustomize ## Deploy controller to the K8s cluster specified in 
 	$(KUSTOMIZE) build config/default | kubectl apply -f -
 
 undeploy: kustomize ## Undeploy controller from the K8s cluster specified in ~/.kube/config.
-	$(KUSTOMIZE) build config/default | kubectl delete -f -
+	$(KUSTOMIZE) build config/default | kubectl delete --ignore-not-found -f -
 
 # Let .version be phony so that a git update to the workarea can be reflected
 # in it each time it's needed.

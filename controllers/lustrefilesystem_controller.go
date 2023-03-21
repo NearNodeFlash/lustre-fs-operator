@@ -77,7 +77,7 @@ func (r *LustreFileSystemReconciler) Reconcile(ctx context.Context, req ctrl.Req
 	}
 
 	statusUpdater := updater.NewStatusUpdater[*v1alpha1.LustreFileSystemStatus](fs)
-	defer func() { err = statusUpdater.CloseWithStatusUpdate(ctx, r, err) }()
+	defer func() { err = statusUpdater.CloseWithStatusUpdate(ctx, r.Client.Status(), err) }()
 
 	// Check if the object is being deleted.
 	if !fs.GetDeletionTimestamp().IsZero() {

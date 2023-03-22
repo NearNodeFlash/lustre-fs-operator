@@ -2,10 +2,8 @@ module github.com/NearNodeFlash/lustre-fs-operator
 
 go 1.19
 
-replace github.com/HewlettPackard/dws => ../dws-5.git
-
 require (
-	github.com/HewlettPackard/dws v0.0.0-20221027172242-11a787dffb4c
+	github.com/HewlettPackard/dws v0.0.0-20230322150428-080a05f072a6
 	github.com/HewlettPackard/lustre-csi-driver v0.0.0-20220623192103-4ce53adacc95
 	github.com/onsi/ginkgo/v2 v2.9.1
 	github.com/onsi/gomega v1.27.3

@@ -7,3 +7,7 @@ spec:
   name: maui
   mgsNids: 172.0.0.0@tcp
   mountRoot: /lus/maui
+  namespaces:
+    default:
+      modes:
+        - ReadWriteMany

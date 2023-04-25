@@ -12,3 +12,11 @@ spec:
   name: w0
   mgsNids: rabbit-03@tcp
   mountRoot: /lus/w0
+  namespaces:
+    nnf-daffy-lustre:
+      modes:
+        - ReadWriteMany
+
+
+
+

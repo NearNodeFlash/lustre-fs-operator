@@ -169,7 +169,7 @@ container-unit-test: .version ## Build docker image with the manager and execute
 	${DOCKER} run --rm -t --name $@-lustre-fs-operator $(IMAGE_TAG_BASE)-$@:$(VERSION)
 
 test: manifests generate fmt vet envtest ## Run tests.
-	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) -p path --bin-dir $(LOCALBIN))" go test ./controllers/... ./api/... -coverprofile cover.out -args -ginkgo.v -ginkgo.progress
+	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) -p path --bin-dir $(LOCALBIN))" go test ./controllers/... ./api/... -coverprofile cover.out -args -ginkgo.v
 
 ##@ Build
 

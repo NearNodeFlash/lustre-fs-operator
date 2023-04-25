@@ -1,4 +1,4 @@
-apiVersion: cray.hpe.com/v1alpha1
+apiVersion: lus.cray.hpe.com/v1alpha1
 kind: LustreFileSystem
 metadata:
   name: lustrefilesystem-sample-maui

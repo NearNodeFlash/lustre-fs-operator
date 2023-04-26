@@ -1,9 +1,13 @@
-apiVersion: cray.hpe.com/v1alpha1
+apiVersion: lus.cray.hpe.com/v1alpha1
 kind: LustreFileSystem
 metadata:
   name: lustrefilesystem-sample-maui
   namespace: nnf-lustre-fs-system
 spec:
   name: maui
-  mgsNid: 172.0.0.0@tcp
+  mgsNids: 172.0.0.0@tcp
   mountRoot: /lus/maui
+  namespaces:
+    default:
+      modes:
+        - ReadWriteMany

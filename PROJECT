@@ -1,6 +1,5 @@
 domain: cray.hpe.com
 layout:
-
 - go.kubebuilder.io/v3
 plugins:
   manifests.sdk.operatorframework.io/v2: {}
@@ -13,6 +12,7 @@ resources:
     namespaced: true
   controller: true
   domain: cray.hpe.com
+  group: lus
   kind: LustreFileSystem
   path: github.com/NearNodeFlash/lustre-fs-operator/api/v1alpha1
   version: v1alpha1

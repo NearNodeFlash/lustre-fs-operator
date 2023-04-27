@@ -1,0 +1,12 @@
+apiVersion: lus.cray.hpe.com/v1beta1
+kind: LustreFileSystem
+metadata:
+  labels:
+    app.kubernetes.io/name: lustrefilesystem
+    app.kubernetes.io/instance: lustrefilesystem-sample
+    app.kubernetes.io/part-of: lustre-fs-operator
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/created-by: lustre-fs-operator
+  name: lustrefilesystem-sample
+spec:
+  # TODO(user): Add fields here

@@ -110,6 +110,7 @@ const (
 )
 
 //+kubebuilder:object:root=true
+//+kubebuilder:storageversion
 //+kubebuilder:subresource:status
 //+kubebuilder:printcolumn:name="FSNAME",type="string",JSONPath=".spec.name",description="Lustre file system name"
 //+kubebuilder:printcolumn:name="MGSNIDS",type="string",JSONPath=".spec.mgsNids",description="List of MGS NIDs"

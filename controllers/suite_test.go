@@ -34,7 +34,7 @@ import (
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
-	"github.com/NearNodeFlash/lustre-fs-operator/api/v1alpha1"
+	lusv1beta1 "github.com/NearNodeFlash/lustre-fs-operator/api/v1beta1"
 	//+kubebuilder:scaffold:imports
 )
 
@@ -72,7 +72,7 @@ var _ = BeforeSuite(func() {
 	Expect(err).NotTo(HaveOccurred())
 	Expect(cfg).NotTo(BeNil())
 
-	err = v1alpha1.AddToScheme(scheme.Scheme)
+	err = lusv1alpha1.AddToScheme(scheme.Scheme)
 	Expect(err).NotTo(HaveOccurred())
 
 	//+kubebuilder:scaffold:scheme
@@ -100,7 +100,7 @@ var _ = BeforeSuite(func() {
 	})
 	Expect(err).ToNot(HaveOccurred())
 
-	err = (&v1alpha1.LustreFileSystem{}).SetupWebhookWithManager(k8sManager)
+	err = (&lusv1alpha1.LustreFileSystem{}).SetupWebhookWithManager(k8sManager)
 	Expect(err).ToNot(HaveOccurred())
 
 	err = (&LustreFileSystemReconciler{

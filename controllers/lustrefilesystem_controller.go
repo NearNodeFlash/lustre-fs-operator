@@ -35,7 +35,7 @@ import (
 
 	"github.com/HewlettPackard/dws/utils/updater"
 	"github.com/HewlettPackard/lustre-csi-driver/pkg/lustre-driver/service"
-	"github.com/NearNodeFlash/lustre-fs-operator/api/v1alpha1"
+	lusv1beta1 "github.com/NearNodeFlash/lustre-fs-operator/api/v1beta1"
 )
 
 const (
@@ -71,12 +71,12 @@ type LustreFileSystemReconciler struct {
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.10.0/pkg/reconcile
 func (r *LustreFileSystemReconciler) Reconcile(ctx context.Context, req ctrl.Request) (result ctrl.Result, err error) {
 
-	fs := &v1alpha1.LustreFileSystem{}
+	fs := &lusv1alpha1.LustreFileSystem{}
 	if err := r.Get(ctx, req.NamespacedName, fs); err != nil {
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
-	statusUpdater := updater.NewStatusUpdater[*v1alpha1.LustreFileSystemStatus](fs)
+	statusUpdater := updater.NewStatusUpdater[*lusv1alpha1.LustreFileSystemStatus](fs)
 	defer func() { err = statusUpdater.CloseWithStatusUpdate(ctx, r.Client.Status(), err) }()
 
 	// Check if the object is being deleted.
@@ -117,25 +117,25 @@ func (r *LustreFileSystemReconciler) Reconcile(ctx context.Context, req ctrl.Req
 	for namespace := range fs.Spec.Namespaces {
 
 		if fs.Status.Namespaces == nil {
-			fs.Status.Namespaces = make(map[string]v1alpha1.LustreFileSystemNamespaceStatus)
+			fs.Status.Namespaces = make(map[string]lusv1alpha1.LustreFileSystemNamespaceStatus)
 		}
 
 		for _, mode := range fs.Spec.Namespaces[namespace].Modes {
 
 			if fs.Status.Namespaces[namespace].Modes == nil {
-				fs.Status.Namespaces[namespace] = v1alpha1.LustreFileSystemNamespaceStatus{
-					Modes: make(map[corev1.PersistentVolumeAccessMode]v1alpha1.LustreFileSystemNamespaceAccessStatus),
+				fs.Status.Namespaces[namespace] = lusv1alpha1.LustreFileSystemNamespaceStatus{
+					Modes: make(map[corev1.PersistentVolumeAccessMode]lusv1alpha1.LustreFileSystemNamespaceAccessStatus),
 				}
 			}
 
 			if _, found := fs.Status.Namespaces[namespace].Modes[mode]; !found {
-				fs.Status.Namespaces[namespace].Modes[mode] = v1alpha1.LustreFileSystemNamespaceAccessStatus{
-					State: v1alpha1.NamespaceAccessPending,
+				fs.Status.Namespaces[namespace].Modes[mode] = lusv1alpha1.LustreFileSystemNamespaceAccessStatus{
+					State: lusv1alpha1.NamespaceAccessPending,
 				}
 			}
 
 			status := fs.Status.Namespaces[namespace].Modes[mode]
-			if status.State != v1alpha1.NamespaceAccessReady {
+			if status.State != lusv1alpha1.NamespaceAccessReady {
 				pv, err := r.createOrUpdatePersistentVolume(ctx, fs, namespace, mode)
 				if err != nil {
 					return ctrl.Result{}, err
@@ -146,8 +146,8 @@ func (r *LustreFileSystemReconciler) Reconcile(ctx context.Context, req ctrl.Req
 					return ctrl.Result{}, err
 				}
 
-				fs.Status.Namespaces[namespace].Modes[mode] = v1alpha1.LustreFileSystemNamespaceAccessStatus{
-					State: v1alpha1.NamespaceAccessReady,
+				fs.Status.Namespaces[namespace].Modes[mode] = lusv1alpha1.LustreFileSystemNamespaceAccessStatus{
+					State: lusv1alpha1.NamespaceAccessReady,
 					PersistentVolumeRef: &corev1.LocalObjectReference{
 						Name: pv.Name,
 					},
@@ -200,7 +200,7 @@ func (r *LustreFileSystemReconciler) Reconcile(ctx context.Context, req ctrl.Req
 	return ctrl.Result{}, nil
 }
 
-func (r *LustreFileSystemReconciler) createOrUpdatePersistentVolumeClaim(ctx context.Context, fs *v1alpha1.LustreFileSystem, namespace string, mode corev1.PersistentVolumeAccessMode) (*corev1.PersistentVolumeClaim, error) {
+func (r *LustreFileSystemReconciler) createOrUpdatePersistentVolumeClaim(ctx context.Context, fs *lusv1alpha1.LustreFileSystem, namespace string, mode corev1.PersistentVolumeAccessMode) (*corev1.PersistentVolumeClaim, error) {
 
 	pvc := &corev1.PersistentVolumeClaim{
 		ObjectMeta: metav1.ObjectMeta{
@@ -238,7 +238,7 @@ func (r *LustreFileSystemReconciler) createOrUpdatePersistentVolumeClaim(ctx con
 	return pvc, nil
 }
 
-func (r *LustreFileSystemReconciler) createOrUpdatePersistentVolume(ctx context.Context, fs *v1alpha1.LustreFileSystem, namespace string, mode corev1.PersistentVolumeAccessMode) (*corev1.PersistentVolume, error) {
+func (r *LustreFileSystemReconciler) createOrUpdatePersistentVolume(ctx context.Context, fs *lusv1alpha1.LustreFileSystem, namespace string, mode corev1.PersistentVolumeAccessMode) (*corev1.PersistentVolume, error) {
 
 	pv := &corev1.PersistentVolume{
 		ObjectMeta: metav1.ObjectMeta{
@@ -296,7 +296,7 @@ func (r *LustreFileSystemReconciler) createOrUpdatePersistentVolume(ctx context.
 	return pv, nil
 }
 
-func (r *LustreFileSystemReconciler) deleteAccess(ctx context.Context, fs *v1alpha1.LustreFileSystem, namespace string, mode corev1.PersistentVolumeAccessMode) error {
+func (r *LustreFileSystemReconciler) deleteAccess(ctx context.Context, fs *lusv1alpha1.LustreFileSystem, namespace string, mode corev1.PersistentVolumeAccessMode) error {
 	pvc := &corev1.PersistentVolumeClaim{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      fs.PersistentVolumeClaimName(namespace, mode),
@@ -330,6 +330,6 @@ func (r *LustreFileSystemReconciler) deleteAccess(ctx context.Context, fs *v1alp
 // SetupWithManager sets up the controller with the Manager.
 func (r *LustreFileSystemReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&v1alpha1.LustreFileSystem{}).
+		For(&lusv1alpha1.LustreFileSystem{}).
 		Complete(r)
 }

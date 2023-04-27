@@ -20,9 +20,6 @@ resources:
   kind: LustreFileSystem
   path: github.com/NearNodeFlash/lustre-fs-operator/api/v1alpha1
   version: v1alpha1
-  webhooks:
-    validation: true
-    webhookVersion: v1
 - api:
     crdVersion: v1
     namespaced: true
@@ -31,4 +28,7 @@ resources:
   kind: LustreFileSystem
   path: github.com/NearNodeFlash/lustre-fs-operator/api/v1beta1
   version: v1beta1
-version: "3"
+  webhooks:
+    validation: true
+    webhookVersion: v1
+version: '3'

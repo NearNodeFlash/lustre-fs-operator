@@ -30,7 +30,7 @@ rules:
   - update
   - watch
 - apiGroups:
-  - cray.hpe.com
+  - lus.cray.hpe.com
   resources:
   - lustrefilesystems
   verbs:
@@ -42,13 +42,13 @@ rules:
   - update
   - watch
 - apiGroups:
-  - cray.hpe.com
+  - lus.cray.hpe.com
   resources:
   - lustrefilesystems/finalizers
   verbs:
   - update
 - apiGroups:
-  - cray.hpe.com
+  - lus.cray.hpe.com
   resources:
   - lustrefilesystems/status
   verbs:

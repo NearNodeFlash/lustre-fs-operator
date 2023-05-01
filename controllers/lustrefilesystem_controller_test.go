@@ -35,15 +35,15 @@ import (
 
 var _ = Describe("LustreFileSystem Controller", func() {
 
-	var fs *lusv1alpha1.LustreFileSystem
+	var fs *lusv1beta1.LustreFileSystem
 
 	BeforeEach(func() {
-		fs = &lusv1alpha1.LustreFileSystem{
+		fs = &lusv1beta1.LustreFileSystem{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "controller",
 				Namespace: corev1.NamespaceDefault,
 			},
-			Spec: lusv1alpha1.LustreFileSystemSpec{
+			Spec: lusv1beta1.LustreFileSystemSpec{
 				Name:             "test",
 				MgsNids:          "172.0.0.1@tcp",
 				MountRoot:        "/lus/test",
@@ -78,7 +78,7 @@ var _ = Describe("LustreFileSystem Controller", func() {
 		const namespace = "dummy-namespace"
 
 		BeforeEach(func() {
-			fs.Spec.Namespaces = map[string]lusv1alpha1.LustreFileSystemNamespaceSpec{
+			fs.Spec.Namespaces = map[string]lusv1beta1.LustreFileSystemNamespaceSpec{
 				namespace: {},
 			}
 		})
@@ -120,14 +120,14 @@ var _ = Describe("LustreFileSystem Controller", func() {
 		})
 
 		validateCreateOccurredFn := func() {
-			Eventually(func(g Gomega) lusv1alpha1.LustreFileSystemNamespaceAccessStatus {
+			Eventually(func(g Gomega) lusv1beta1.LustreFileSystemNamespaceAccessStatus {
 				g.Expect(k8sClient.Get(context.TODO(), client.ObjectKeyFromObject(fs), fs)).Should(Succeed())
 				g.Expect(fs.Status.Namespaces).To(HaveKey(namespace))
 				g.Expect(fs.Status.Namespaces[namespace].Modes).To(HaveKey(mode))
 
 				return fs.Status.Namespaces[namespace].Modes[mode]
 			}).Should(MatchAllFields(Fields{
-				"State":                    Equal(lusv1alpha1.NamespaceAccessReady),
+				"State":                    Equal(lusv1beta1.NamespaceAccessReady),
 				"PersistentVolumeRef":      Not(BeNil()),
 				"PersistentVolumeClaimRef": Not(BeNil()),
 			}))
@@ -153,7 +153,7 @@ var _ = Describe("LustreFileSystem Controller", func() {
 		Context("with namespace and mode on create", func() {
 
 			BeforeEach(func() {
-				fs.Spec.Namespaces = map[string]lusv1alpha1.LustreFileSystemNamespaceSpec{
+				fs.Spec.Namespaces = map[string]lusv1beta1.LustreFileSystemNamespaceSpec{
 					namespace: {
 						Modes: []corev1.PersistentVolumeAccessMode{
 							mode,
@@ -175,7 +175,7 @@ var _ = Describe("LustreFileSystem Controller", func() {
 					g.Expect(k8sClient.Get(context.TODO(), client.ObjectKeyFromObject(fs), fs)).Should(Succeed())
 					Expect(fs.Spec.Namespaces).To(BeEmpty())
 
-					fs.Spec.Namespaces = map[string]lusv1alpha1.LustreFileSystemNamespaceSpec{
+					fs.Spec.Namespaces = map[string]lusv1beta1.LustreFileSystemNamespaceSpec{
 						namespace: {
 							Modes: []corev1.PersistentVolumeAccessMode{
 								mode,
@@ -203,7 +203,7 @@ var _ = Describe("LustreFileSystem Controller", func() {
 					return k8sClient.Update(context.TODO(), fs)
 				}).Should(Succeed())
 
-				Eventually(func(g Gomega) map[string]lusv1alpha1.LustreFileSystemNamespaceStatus {
+				Eventually(func(g Gomega) map[string]lusv1beta1.LustreFileSystemNamespaceStatus {
 					g.Expect(k8sClient.Get(context.TODO(), client.ObjectKeyFromObject(fs), fs)).Should(Succeed())
 					return fs.Status.Namespaces
 				}).ShouldNot(HaveKey(namespace))

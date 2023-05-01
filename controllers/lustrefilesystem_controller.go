@@ -39,7 +39,7 @@ import (
 )
 
 const (
-	finalizerLustreFileSystem = "cray.hpe.com/lustre_fs"
+	finalizerLustreFileSystem = "lus.cray.hpe.com/lustre_fs"
 )
 
 var (
@@ -54,9 +54,9 @@ type LustreFileSystemReconciler struct {
 	Scheme *runtime.Scheme
 }
 
-//+kubebuilder:rbac:groups=cray.hpe.com,resources=lustrefilesystems,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=cray.hpe.com,resources=lustrefilesystems/status,verbs=get;update;patch
-//+kubebuilder:rbac:groups=cray.hpe.com,resources=lustrefilesystems/finalizers,verbs=update
+//+kubebuilder:rbac:groups=lus.cray.hpe.com,resources=lustrefilesystems,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=lus.cray.hpe.com,resources=lustrefilesystems/status,verbs=get;update;patch
+//+kubebuilder:rbac:groups=lus.cray.hpe.com,resources=lustrefilesystems/finalizers,verbs=update
 //+kubebuilder:rbac:groups=core,resources=persistentvolumes,verbs=get;list;update;create;patch;delete;watch
 //+kubebuilder:rbac:groups=core,resources=persistentvolumeclaims,verbs=get;list;update;create;patch;delete;watch
 
@@ -77,7 +77,7 @@ func (r *LustreFileSystemReconciler) Reconcile(ctx context.Context, req ctrl.Req
 	}
 
 	statusUpdater := updater.NewStatusUpdater[*v1alpha1.LustreFileSystemStatus](fs)
-	defer func() { err = statusUpdater.CloseWithStatusUpdate(ctx, r, err) }()
+	defer func() { err = statusUpdater.CloseWithStatusUpdate(ctx, r.Client.Status(), err) }()
 
 	// Check if the object is being deleted.
 	if !fs.GetDeletionTimestamp().IsZero() {

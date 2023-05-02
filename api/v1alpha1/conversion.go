@@ -29,7 +29,7 @@ import (
 	utilconversion "github.com/NearNodeFlash/lustre-fs-operator/github/cluster-api/util/conversion"
 )
 
-var convertlog = logf.Log.V(1).WithName("convert-v1alpha1")
+var convertlog = logf.Log.V(2).WithName("convert-v1alpha1")
 
 func (src *LustreFileSystem) ConvertTo(dstRaw conversion.Hub) error {
 	convertlog.Info("Convert LustreFileSystem To Hub", "name", src.GetName(), "namespace", src.GetNamespace())

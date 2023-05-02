@@ -1,7 +1,7 @@
 apiVersion: lus.cray.hpe.com/v1alpha1
 kind: LustreFileSystem
 metadata:
-  name: lustrefilesystem-sample-maui
+  name: maui
   namespace: nnf-lustre-fs-system
 spec:
   name: maui

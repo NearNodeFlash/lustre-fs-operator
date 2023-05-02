@@ -3,10 +3,17 @@ kind: LustreFileSystem
 metadata:
   labels:
     app.kubernetes.io/name: lustrefilesystem
-    app.kubernetes.io/instance: lustrefilesystem-sample
+    app.kubernetes.io/instance: kauai
     app.kubernetes.io/part-of: lustre-fs-operator
     app.kubernetes.io/managed-by: kustomize
     app.kubernetes.io/created-by: lustre-fs-operator
-  name: lustrefilesystem-sample
+  name: kauai
+  namespace: nnf-lustre-fs-system
 spec:
-  # TODO(user): Add fields here
+  name: kauai
+  mgsNids: 172.0.0.0@tcp
+  mountRoot: /lus/kauai
+  namespaces:
+    default:
+      modes:
+        - ReadWriteMany

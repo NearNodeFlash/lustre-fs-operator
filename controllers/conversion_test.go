@@ -55,7 +55,11 @@ var _ = Describe("Conversion Webhook Test", func() {
 					Name:      id,
 					Namespace: corev1.NamespaceDefault,
 				},
-				Spec: lusv1beta1.LustreFileSystemSpec{},
+				Spec: lusv1beta1.LustreFileSystemSpec{
+					Name:      "w0",
+					MgsNids:   "172.0.0.0@tcp",
+					MountRoot: "/lus/w0",
+				},
 			}
 
 			Expect(k8sClient.Create(context.TODO(), resHub)).To(Succeed())

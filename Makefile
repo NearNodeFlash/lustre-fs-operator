@@ -181,7 +181,7 @@ run: manifests generate fmt vet ## Run a controller from your host.
 	go run ./main.go
 
 docker-build: VERSION ?= $(shell cat .version)
-docker-build: .version test ## Build docker image with the manager.
+docker-build: .version ## Build docker image with the manager.
 	${DOCKER} build -t $(IMAGE_TAG_BASE):$(VERSION) .
 
 docker-push: VERSION ?= $(shell cat .version)

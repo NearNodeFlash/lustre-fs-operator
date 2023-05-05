@@ -5,6 +5,9 @@ go 1.19
 require (
 	github.com/HewlettPackard/dws v0.0.0-20230322150428-080a05f072a6
 	github.com/HewlettPackard/lustre-csi-driver v0.0.0-20220623192103-4ce53adacc95
+	github.com/google/go-cmp v0.5.9
+	github.com/google/gofuzz v1.2.0
+	github.com/google/uuid v1.3.0
 	github.com/onsi/ginkgo/v2 v2.9.1
 	github.com/onsi/gomega v1.27.3
 	k8s.io/api v0.26.1
@@ -31,10 +34,7 @@ require (
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
 	github.com/golang/protobuf v1.5.3 // indirect
 	github.com/google/gnostic v0.6.9 // indirect
-	github.com/google/go-cmp v0.5.9 // indirect
-	github.com/google/gofuzz v1.2.0 // indirect
 	github.com/google/pprof v0.0.0-20210407192527-94a9f03dee38 // indirect
-	github.com/google/uuid v1.3.0 // indirect
 	github.com/imdario/mergo v0.3.13 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect

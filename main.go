@@ -34,7 +34,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
-	crayhpecomv1alpha1 "github.com/NearNodeFlash/lustre-fs-operator/api/v1alpha1"
+	lusv1alpha1 "github.com/NearNodeFlash/lustre-fs-operator/api/v1alpha1"
+	lusv1beta1 "github.com/NearNodeFlash/lustre-fs-operator/api/v1beta1"
 	"github.com/NearNodeFlash/lustre-fs-operator/controllers"
 	//+kubebuilder:scaffold:imports
 )
@@ -47,7 +48,8 @@ var (
 func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 
-	utilruntime.Must(crayhpecomv1alpha1.AddToScheme(scheme))
+	utilruntime.Must(lusv1alpha1.AddToScheme(scheme))
+	utilruntime.Must(lusv1beta1.AddToScheme(scheme))
 	//+kubebuilder:scaffold:scheme
 }
 
@@ -88,7 +90,7 @@ func main() {
 		setupLog.Error(err, "unable to create controller", "controller", "LustreFileSystem")
 		os.Exit(1)
 	}
-	if err = (&crayhpecomv1alpha1.LustreFileSystem{}).SetupWebhookWithManager(mgr); err != nil {
+	if err = (&lusv1beta1.LustreFileSystem{}).SetupWebhookWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create webhook", "webhook", "LustreFileSystem")
 		os.Exit(1)
 	}

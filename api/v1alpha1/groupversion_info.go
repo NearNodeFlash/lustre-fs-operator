@@ -1,5 +1,5 @@
 /*
- * Copyright 2021, 2022 Hewlett Packard Enterprise Development LP
+ * Copyright 2021-2023 Hewlett Packard Enterprise Development LP
  * Other additional copyright holders may be indicated within.
  *
  * The entirety of this work is licensed under the Apache License,
@@ -19,7 +19,7 @@
 
 // Package v1alpha1 contains API Schema definitions for the  v1alpha1 API group
 // +kubebuilder:object:generate=true
-// +groupName=cray.hpe.com
+// +groupName=lus.cray.hpe.com
 package v1alpha1
 
 import (
@@ -29,11 +29,14 @@ import (
 
 var (
 	// GroupVersion is group version used to register these objects
-	GroupVersion = schema.GroupVersion{Group: "cray.hpe.com", Version: "v1alpha1"}
+	GroupVersion = schema.GroupVersion{Group: "lus.cray.hpe.com", Version: "v1alpha1"}
 
 	// SchemeBuilder is used to add go types to the GroupVersionKind scheme
 	SchemeBuilder = &scheme.Builder{GroupVersion: GroupVersion}
 
 	// AddToScheme adds the types in this group-version to the given scheme.
 	AddToScheme = SchemeBuilder.AddToScheme
+
+	// Used by zz_generated.conversion.go.
+	localSchemeBuilder = SchemeBuilder.SchemeBuilder
 )

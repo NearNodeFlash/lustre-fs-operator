@@ -184,6 +184,10 @@ docker-build: VERSION ?= $(shell cat .version)
 docker-build: .version ## Build docker image with the manager.
 	${DOCKER} build -t $(IMAGE_TAG_BASE):$(VERSION) .
 
+edit-image: VERSION ?= $(shell cat .version)
+edit-image: .version kustomize ## Replace manager/kustomization.yaml image with name "controller" -> ghcr tagged container reference
+	cd config/manager && $(KUSTOMIZE) edit set image controller=$(IMAGE_TAG_BASE):$(VERSION)
+
 docker-push: VERSION ?= $(shell cat .version)
 docker-push: .version ## Push docker image with the manager.
 	${DOCKER} push $(IMAGE_TAG_BASE):$(VERSION)
@@ -200,13 +204,13 @@ install: manifests kustomize ## Install CRDs into the K8s cluster specified in ~
 uninstall: manifests kustomize ## Uninstall CRDs from the K8s cluster specified in ~/.kube/config.
 	$(KUSTOMIZE) build config/crd | kubectl delete --ignore-not-found -f -
 
-deploy: VERSION ?= $(shell cat .version)
-deploy: .version kustomize ## Deploy controller to the K8s cluster specified in ~/.kube/config.
-	cd config/manager && $(KUSTOMIZE) edit set image controller=$(IMAGE_TAG_BASE):$(VERSION)
+deploy: kustomize edit-image ## Deploy controller to the K8s cluster specified in ~/.kube/config.
 	$(KUSTOMIZE) build config/default | kubectl apply -f -
 
-undeploy: kustomize ## Undeploy controller from the K8s cluster specified in ~/.kube/config.
+undeploy: kustomize edit-image ## Undeploy controller from the K8s cluster specified in ~/.kube/config.
 	$(KUSTOMIZE) build config/default | kubectl delete --ignore-not-found -f -
+
+installer: kustomize edit-image
 
 # Let .version be phony so that a git update to the workarea can be reflected
 # in it each time it's needed.
@@ -317,7 +321,7 @@ $(ENVTEST): $(LOCALBIN)
 	test -s $(LOCALBIN)/setup-envtest || GOBIN=$(LOCALBIN) go install sigs.k8s.io/controller-runtime/tools/setup-envtest@latest
 
 .PHONY: bundle
-bundle: manifests kustomize ## Generate bundle manifests and metadata, then validate generated files.
+bundle: manifests kustomize edit-image ## Generate bundle manifests and metadata, then validate generated files.
 	operator-sdk generate kustomize manifests -q
 	cd config/manager && $(KUSTOMIZE) edit set image controller=$(IMG)
 	$(KUSTOMIZE) build config/manifests | operator-sdk generate bundle -q --overwrite --version $(VERSION) $(BUNDLE_METADATA_OPTS)

@@ -190,7 +190,7 @@ docker-push: .version ## Push docker image with the manager.
 
 kind-push: VERSION ?= $(shell cat .version)
 kind-push: .version
-	kind load docker-image --nodes `kubectl get nodes -l cray.nnf.manager=true -o json | jq -rM '.items[].metadata.name' | paste -d, -s -` $(IMAGE_TAG_BASE):$(VERSION)
+	kind load docker-image $(IMAGE_TAG_BASE):$(VERSION)
 
 ##@ Deployment
 

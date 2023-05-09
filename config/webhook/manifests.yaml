@@ -11,14 +11,14 @@ webhooks:
     service:
       name: webhook-service
       namespace: system
-      path: /validate-lus-cray-hpe-com-v1alpha1-lustrefilesystem
+      path: /validate-lus-cray-hpe-com-v1beta1-lustrefilesystem
   failurePolicy: Fail
   name: vlustrefilesystem.kb.io
   rules:
   - apiGroups:
     - lus.cray.hpe.com
     apiVersions:
-    - v1alpha1
+    - v1beta1
     operations:
     - CREATE
     - UPDATE

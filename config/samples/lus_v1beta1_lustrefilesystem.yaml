@@ -1,0 +1,19 @@
+apiVersion: lus.cray.hpe.com/v1beta1
+kind: LustreFileSystem
+metadata:
+  labels:
+    app.kubernetes.io/name: lustrefilesystem
+    app.kubernetes.io/instance: kauai
+    app.kubernetes.io/part-of: lustre-fs-operator
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/created-by: lustre-fs-operator
+  name: kauai
+  namespace: nnf-lustre-fs-system
+spec:
+  name: kauai
+  mgsNids: 172.0.0.0@tcp
+  mountRoot: /lus/kauai
+  namespaces:
+    default:
+      modes:
+        - ReadWriteMany

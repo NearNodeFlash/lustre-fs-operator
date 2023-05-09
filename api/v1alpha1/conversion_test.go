@@ -16,3 +16,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
+package v1alpha1
+
+import (
+	"testing"
+
+	. "github.com/onsi/ginkgo/v2"
+
+	lusv1beta1 "github.com/NearNodeFlash/lustre-fs-operator/api/v1beta1"
+	utilconversion "github.com/NearNodeFlash/lustre-fs-operator/github/cluster-api/util/conversion"
+)
+
+func TestFuzzyConversion(t *testing.T) {
+
+	t.Run("for LustreFileSystem", utilconversion.FuzzTestFunc(utilconversion.FuzzTestFuncInput{
+		Hub:   &lusv1beta1.LustreFileSystem{},
+		Spoke: &LustreFileSystem{},
+	}))
+
+}
+
+// Just touch ginkgo, so it's here to interpret any ginkgo args from
+// "make test", so that doesn't fail on this test file.
+var _ = BeforeSuite(func() {})

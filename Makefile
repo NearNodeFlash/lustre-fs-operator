@@ -1,4 +1,4 @@
-# Copyright 2021, 2022 Hewlett Packard Enterprise Development LP
+# Copyright 2021-2023 Hewlett Packard Enterprise Development LP
 # Other additional copyright holders may be indicated within.
 #
 # The entirety of this work is licensed under the Apache License,
@@ -168,8 +168,9 @@ container-unit-test: .version ## Build docker image with the manager and execute
 	${DOCKER} build -f Dockerfile --label $(IMAGE_TAG_BASE)-$@:$(VERSION)-$@ -t $(IMAGE_TAG_BASE)-$@:$(VERSION) --target testing .
 	${DOCKER} run --rm -t --name $@-lustre-fs-operator $(IMAGE_TAG_BASE)-$@:$(VERSION)
 
+TESTDIR ?= ./controllers/... ./api/...
 test: manifests generate fmt vet envtest ## Run tests.
-	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) -p path --bin-dir $(LOCALBIN))" go test ./controllers/... ./api/... -coverprofile cover.out -args -ginkgo.v
+	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) -p path --bin-dir $(LOCALBIN))" go test $(TESTDIR) -coverprofile cover.out -args -ginkgo.v
 
 ##@ Build
 
@@ -180,8 +181,12 @@ run: manifests generate fmt vet ## Run a controller from your host.
 	go run ./main.go
 
 docker-build: VERSION ?= $(shell cat .version)
-docker-build: .version test ## Build docker image with the manager.
+docker-build: .version ## Build docker image with the manager.
 	${DOCKER} build -t $(IMAGE_TAG_BASE):$(VERSION) .
+
+edit-image: VERSION ?= $(shell cat .version)
+edit-image: .version kustomize ## Replace manager/kustomization.yaml image with name "controller" -> ghcr tagged container reference
+	cd config/manager && $(KUSTOMIZE) edit set image controller=$(IMAGE_TAG_BASE):$(VERSION)
 
 docker-push: VERSION ?= $(shell cat .version)
 docker-push: .version ## Push docker image with the manager.
@@ -189,7 +194,7 @@ docker-push: .version ## Push docker image with the manager.
 
 kind-push: VERSION ?= $(shell cat .version)
 kind-push: .version
-	kind load docker-image --nodes `kubectl get nodes -l cray.nnf.manager=true -o json | jq -rM '.items[].metadata.name' | paste -d, -s -` $(IMAGE_TAG_BASE):$(VERSION)
+	kind load docker-image $(IMAGE_TAG_BASE):$(VERSION)
 
 ##@ Deployment
 
@@ -199,13 +204,13 @@ install: manifests kustomize ## Install CRDs into the K8s cluster specified in ~
 uninstall: manifests kustomize ## Uninstall CRDs from the K8s cluster specified in ~/.kube/config.
 	$(KUSTOMIZE) build config/crd | kubectl delete --ignore-not-found -f -
 
-deploy: VERSION ?= $(shell cat .version)
-deploy: .version kustomize ## Deploy controller to the K8s cluster specified in ~/.kube/config.
-	cd config/manager && $(KUSTOMIZE) edit set image controller=$(IMAGE_TAG_BASE):$(VERSION)
+deploy: kustomize edit-image ## Deploy controller to the K8s cluster specified in ~/.kube/config.
 	$(KUSTOMIZE) build config/default | kubectl apply -f -
 
-undeploy: kustomize ## Undeploy controller from the K8s cluster specified in ~/.kube/config.
+undeploy: kustomize edit-image ## Undeploy controller from the K8s cluster specified in ~/.kube/config.
 	$(KUSTOMIZE) build config/default | kubectl delete --ignore-not-found -f -
+
+installer: kustomize edit-image
 
 # Let .version be phony so that a git update to the workarea can be reflected
 # in it each time it's needed.
@@ -222,13 +227,29 @@ $(LOCALBIN):
 	mkdir -p $(LOCALBIN)
 
 ## Tool Binaries
+GO_INSTALL := ./github/cluster-api/scripts/go_install.sh
 KUSTOMIZE ?= $(LOCALBIN)/kustomize
 CONTROLLER_GEN ?= $(LOCALBIN)/controller-gen
 ENVTEST ?= $(LOCALBIN)/setup-envtest
 
+CONVERSION_GEN_BIN := conversion-gen
+CONVERSION_GEN := $(LOCALBIN)/$(CONVERSION_GEN_BIN)
+CONVERSION_GEN_OUTPUT_BASE := --output-base=.
+CONVERSION_GEN_PKG := k8s.io/code-generator/cmd/conversion-gen
+
+CONVERSION_VERIFIER_BIN := conversion-verifier
+CONVERSION_VERIFIER := $(LOCALBIN)/$(CONVERSION_VERIFIER_BIN)
+CONVERSION_VERIFIER_PKG := sigs.k8s.io/cluster-api/hack/tools/conversion-verifier
+
 ## Tool Versions
 KUSTOMIZE_VERSION ?= v4.5.7
 CONTROLLER_TOOLS_VERSION ?= v0.11.1
+CONVERSION_GEN_VER := v0.26.3
+
+# Can be "latest", but cannot be a tag, such as "v1.3.3".  However, it will
+# work with the short-form git commit rev that has been tagged.
+#CONVERSION_VERIFIER_VER := 09030092b # v1.3.3
+CONVERSION_VERIFIER_VER := 2c07717 # v1.4.0
 
 KUSTOMIZE_INSTALL_SCRIPT ?= "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh"
 .PHONY: kustomize
@@ -241,13 +262,66 @@ controller-gen: $(CONTROLLER_GEN) ## Download controller-gen locally if necessar
 $(CONTROLLER_GEN): $(LOCALBIN)
 	test -s $(LOCALBIN)/controller-gen || GOBIN=$(LOCALBIN) go install sigs.k8s.io/controller-tools/cmd/controller-gen@$(CONTROLLER_TOOLS_VERSION)
 
+.PHONY: $(CONVERSION_GEN_BIN)
+$(CONVERSION_GEN_BIN): $(CONVERSION_GEN) ## Build a local copy of conversion-gen.
+
+## We are forcing a rebuild of conversion-gen via PHONY so that we're always using an up-to-date version.
+## We can't use a versioned name for the binary, because that would be reflected in generated files.
+.PHONY: $(CONVERSION_GEN)
+$(CONVERSION_GEN): $(LOCALBIN) # Build conversion-gen from tools folder.
+	GOBIN=$(LOCALBIN) $(GO_INSTALL) $(CONVERSION_GEN_PKG) $(CONVERSION_GEN_BIN) $(CONVERSION_GEN_VER)
+
+.PHONY: generate-go-conversions
+# The SRC_DIRS value is a comma-separated list of paths to old versions.
+# The --input-dirs value is a single path item; specify multiple --input-dirs
+# parameters if you have multiple old versions.
+generate-go-conversions: $(CONVERSION_GEN) ## Generate conversions go code
+	$(MAKE) clean-generated-conversions SRC_DIRS="./api/v1alpha1"
+	$(CONVERSION_GEN) \
+		--input-dirs=./api/v1alpha1 \
+		--build-tag=ignore_autogenerated_core \
+		--output-file-base=zz_generated.conversion $(CONVERSION_GEN_OUTPUT_BASE) \
+		--go-header-file=./hack/boilerplate.go.txt
+
+.PHONY: clean-generated-conversions
+clean-generated-conversions: ## Remove files generated by conversion-gen from the mentioned dirs
+	(IFS=','; for i in $(SRC_DIRS); do find $$i -type f -name 'zz_generated.conversion*' -exec rm -f {} \;; done)
+
+## We are forcing a rebuild of conversion-verifier via PHONY so that we're always using an up-to-date version.
+.PHONY: $(CONVERSION_VERIFIER)
+$(CONVERSION_VERIFIER): $(LOCALBIN) # Build conversion-verifier from tools folder.
+	GOBIN=$(LOCALBIN) $(GO_INSTALL) $(CONVERSION_VERIFIER_PKG) $(CONVERSION_VERIFIER_BIN) $(CONVERSION_VERIFIER_VER)
+
+.PHONY: $(CONVERSION_VERIFIER_BIN)
+$(CONVERSION_VERIFIER_BIN): $(CONVERSION_VERIFIER) ## Build a local copy of conversion-verifier.
+
+## -------------
+## verify
+## -------------
+
+ALL_VERIFY_CHECKS = gen conversions
+
+.PHONY: verify
+verify: $(addprefix verify-,$(ALL_VERIFY_CHECKS)) ## Run all verify-* targets
+
+.PHONY: verify-gen
+verify-gen: generate manifests generate-go-conversions ## Verify go generated files are up to date
+	@if !(git diff --quiet HEAD); then \
+		git diff; \
+		echo "generated files are out of date, run make generate"; exit 1; \
+	fi
+
+.PHONY: verify-conversions
+verify-conversions: $(CONVERSION_VERIFIER)  ## Verifies expected API conversion are in place
+	$(CONVERSION_VERIFIER)
+
 .PHONY: envtest
 envtest: $(ENVTEST) ## Download envtest-setup locally if necessary.
 $(ENVTEST): $(LOCALBIN)
 	test -s $(LOCALBIN)/setup-envtest || GOBIN=$(LOCALBIN) go install sigs.k8s.io/controller-runtime/tools/setup-envtest@latest
 
 .PHONY: bundle
-bundle: manifests kustomize ## Generate bundle manifests and metadata, then validate generated files.
+bundle: manifests kustomize edit-image ## Generate bundle manifests and metadata, then validate generated files.
 	operator-sdk generate kustomize manifests -q
 	cd config/manager && $(KUSTOMIZE) edit set image controller=$(IMG)
 	$(KUSTOMIZE) build config/manifests | operator-sdk generate bundle -q --overwrite --version $(VERSION) $(BUNDLE_METADATA_OPTS)

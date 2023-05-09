@@ -16,3 +16,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
+package v1beta1
+
+func (*LustreFileSystem) Hub() {}
+
+// The conversion-verifier tool wants these...though they're never used.
+func (*LustreFileSystemList) Hub() {}

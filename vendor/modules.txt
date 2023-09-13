@@ -1,4 +1,4 @@
-# github.com/DataWorkflowServices/dws v0.0.1-0.20230913193551-2ee6df5c8f3d
+# github.com/DataWorkflowServices/dws v0.0.1-0.20230913204342-e78d55d24550
 ## explicit; go 1.19
 github.com/DataWorkflowServices/dws/utils/updater
 # github.com/HewlettPackard/lustre-csi-driver v0.0.0-20220623192103-4ce53adacc95

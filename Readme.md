@@ -35,4 +35,3 @@ The `master` branch should always point to the `master` tag.  This can always be
 ```console
 make installer VERSION=master
 ```
-

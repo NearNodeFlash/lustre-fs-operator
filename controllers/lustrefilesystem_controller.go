@@ -33,7 +33,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/HewlettPackard/dws/utils/updater"
+	"github.com/DataWorkflowServices/dws/utils/updater"
 	"github.com/HewlettPackard/lustre-csi-driver/pkg/lustre-driver/service"
 	lusv1beta1 "github.com/NearNodeFlash/lustre-fs-operator/api/v1beta1"
 )

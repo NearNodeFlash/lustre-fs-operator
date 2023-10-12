@@ -250,12 +250,12 @@ CONVERSION_VERIFIER_PKG := sigs.k8s.io/cluster-api/hack/tools/conversion-verifie
 ## Tool Versions
 KUSTOMIZE_VERSION ?= v4.5.7
 CONTROLLER_TOOLS_VERSION ?= v0.12.0
-CONVERSION_GEN_VER := v0.26.3
+CONVERSION_GEN_VER := v0.28.2
 
 # Can be "latest", but cannot be a tag, such as "v1.3.3".  However, it will
 # work with the short-form git commit rev that has been tagged.
 #CONVERSION_VERIFIER_VER := 09030092b # v1.3.3
-CONVERSION_VERIFIER_VER := 2c07717 # v1.4.0
+CONVERSION_VERIFIER_VER := 3290c5a # v1.5.2
 
 KUSTOMIZE_INSTALL_SCRIPT ?= "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh"
 .PHONY: kustomize

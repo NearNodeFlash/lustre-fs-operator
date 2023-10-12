@@ -249,7 +249,7 @@ CONVERSION_VERIFIER_PKG := sigs.k8s.io/cluster-api/hack/tools/conversion-verifie
 
 ## Tool Versions
 KUSTOMIZE_VERSION ?= v5.1.1
-CONTROLLER_TOOLS_VERSION ?= v0.12.0
+CONTROLLER_TOOLS_VERSION ?= v0.13.0
 CONVERSION_GEN_VER := v0.28.2
 
 # Can be "latest", but cannot be a tag, such as "v1.3.3".  However, it will

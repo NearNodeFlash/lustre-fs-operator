@@ -107,7 +107,7 @@ vet: ## Run go vet against code.
 	go vet ./...
 
 # Explicitly specifying directories to test here to avoid running tests in .dws-operator for the time being.
-# ./controllers/...
+# ./internal/...
 # ./api/...
 # Below is a list of ginkgo test flags that may be used to generate different test patterns.
 # Specifying 'count=1' is the idiomatic way to disable test caching
@@ -168,17 +168,17 @@ container-unit-test: .version ## Build docker image with the manager and execute
 	${DOCKER} build -f Dockerfile --label $(IMAGE_TAG_BASE)-$@:$(VERSION)-$@ -t $(IMAGE_TAG_BASE)-$@:$(VERSION) --target testing .
 	${DOCKER} run --rm -t --name $@-lustre-fs-operator $(IMAGE_TAG_BASE)-$@:$(VERSION)
 
-TESTDIR ?= ./controllers/... ./api/...
+TESTDIR ?= ./internal/... ./api/...
 test: manifests generate fmt vet envtest ## Run tests.
 	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) -p path --bin-dir $(LOCALBIN))" go test $(TESTDIR) -coverprofile cover.out -args -ginkgo.v
 
 ##@ Build
 
 build: generate fmt vet ## Build manager binary.
-	go build -o bin/manager main.go
+	go build -o bin/manager cmd/main.go
 
 run: manifests generate fmt vet ## Run a controller from your host.
-	go run ./main.go
+	go run cmd/main.go
 
 docker-build: VERSION ?= $(shell cat .version)
 docker-build: .version ## Build docker image with the manager.

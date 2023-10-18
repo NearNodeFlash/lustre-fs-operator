@@ -17,7 +17,7 @@
  * limitations under the License.
  */
 
-package controllers
+package controller
 
 import (
 	"context"
@@ -79,9 +79,9 @@ var _ = BeforeSuite(func() {
 
 	testEnv = &envtest.Environment{
 		WebhookInstallOptions: envtest.WebhookInstallOptions{Paths: []string{
-			filepath.Join("..", "config", "webhook"),
+			filepath.Join("..", "..", "config", "webhook"),
 		}},
-		CRDDirectoryPaths:        []string{filepath.Join("..", "config", "crd", "bases")},
+		CRDDirectoryPaths:        []string{filepath.Join("..", "..", "config", "crd", "bases")},
 		ErrorIfCRDPathMissing:    true,
 		AttachControlPlaneOutput: true,
 

@@ -37,7 +37,7 @@ import (
 
 	lusv1alpha1 "github.com/NearNodeFlash/lustre-fs-operator/api/v1alpha1"
 	lusv1beta1 "github.com/NearNodeFlash/lustre-fs-operator/api/v1beta1"
-	"github.com/NearNodeFlash/lustre-fs-operator/controllers"
+	controllers "github.com/NearNodeFlash/lustre-fs-operator/internal/controller"
 	//+kubebuilder:scaffold:imports
 )
 

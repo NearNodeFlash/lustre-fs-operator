@@ -2,6 +2,8 @@ module github.com/NearNodeFlash/lustre-fs-operator
 
 go 1.19
 
+replace github.com/DataWorkflowServices/dws => ../dws
+
 require (
 	github.com/DataWorkflowServices/dws v0.0.1-0.20231010162938-b6d65b00cad6
 	github.com/HewlettPackard/lustre-csi-driver v0.0.0-20220623192103-4ce53adacc95

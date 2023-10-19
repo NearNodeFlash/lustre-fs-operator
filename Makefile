@@ -186,7 +186,7 @@ docker-build: .version ## Build docker image with the manager.
 
 edit-image: VERSION ?= $(shell cat .version)
 edit-image: .version kustomize ## Replace manager/kustomization.yaml image with name "controller" -> ghcr tagged container reference
-	cd config/manager && $(KUSTOMIZE) edit set image controller=$(IMAGE_TAG_BASE):$(VERSION)
+	$(KUSTOMIZE_IMAGE_TAG) config/begin default $(IMAGE_TAG_BASE) $(VERSION)
 
 docker-push: VERSION ?= $(shell cat .version)
 docker-push: .version ## Push docker image with the manager.
@@ -205,9 +205,9 @@ uninstall: manifests kustomize ## Uninstall CRDs from the K8s cluster specified 
 	$(KUSTOMIZE) build config/crd | kubectl delete --ignore-not-found -f -
 
 deploy: kustomize edit-image ## Deploy controller to the K8s cluster specified in ~/.kube/config.
-	$(KUSTOMIZE) build config/default | kubectl apply -f -
+	$(KUSTOMIZE) build config/begin | kubectl apply -f -
 
-undeploy: kustomize edit-image ## Undeploy controller from the K8s cluster specified in ~/.kube/config.
+undeploy: kustomize ## Undeploy controller from the K8s cluster specified in ~/.kube/config.
 	$(KUSTOMIZE) build config/default | kubectl delete --ignore-not-found -f -
 
 installer: kustomize edit-image
@@ -233,6 +233,7 @@ clean-bin:
 	fi
 
 ## Tool Binaries
+KUSTOMIZE_IMAGE_TAG ?= ./hack/make-kustomization.sh
 GO_INSTALL := ./github/cluster-api/scripts/go_install.sh
 KUSTOMIZE ?= $(LOCALBIN)/kustomize
 CONTROLLER_GEN ?= $(LOCALBIN)/controller-gen

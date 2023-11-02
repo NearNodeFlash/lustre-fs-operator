@@ -20,15 +20,15 @@
 package controller
 
 import (
-	"context"
-
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	. "github.com/onsi/gomega/gstruct"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/util/retry"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	lusv1beta1 "github.com/NearNodeFlash/lustre-fs-operator/api/v1beta1"
 )
@@ -53,20 +53,22 @@ var _ = Describe("LustreFileSystem Controller", func() {
 	})
 
 	JustBeforeEach(func() {
-		Expect(k8sClient.Create(context.TODO(), fs)).Should(Succeed())
+		Expect(k8sClient.Create(ctx, fs)).Should(Succeed())
 	})
 
 	JustAfterEach(func() {
-		Expect(k8sClient.Delete(context.TODO(), fs)).Should(Succeed())
-		Eventually(func() error {
-			return k8sClient.Get(context.TODO(), client.ObjectKeyFromObject(fs), fs)
-		}).ShouldNot(Succeed())
+		if fs != nil {
+			Expect(k8sClient.Delete(ctx, fs)).Should(Succeed())
+			Eventually(func() error {
+				return k8sClient.Get(ctx, client.ObjectKeyFromObject(fs), fs)
+			}).ShouldNot(Succeed())
+		}
 	})
 
 	Context("creates successfully with no namespaces", func() {
 		It("has no accesses", func() {
 			Eventually(func() error {
-				return k8sClient.Get(context.TODO(), client.ObjectKeyFromObject(fs), fs)
+				return k8sClient.Get(ctx, client.ObjectKeyFromObject(fs), fs)
 			}).Should(Succeed())
 
 			Expect(fs.Spec.Namespaces).To(HaveLen(0))
@@ -85,7 +87,7 @@ var _ = Describe("LustreFileSystem Controller", func() {
 
 		It("has mode but no namespace accesses", func() {
 			Eventually(func() error {
-				return k8sClient.Get(context.TODO(), client.ObjectKeyFromObject(fs), fs)
+				return k8sClient.Get(ctx, client.ObjectKeyFromObject(fs), fs)
 			}).Should(Succeed())
 
 			Expect(fs.Spec.Namespaces).To(HaveKey(namespace))
@@ -102,12 +104,12 @@ var _ = Describe("LustreFileSystem Controller", func() {
 			namespace for each test case, it is done once in the BeforeAll() below.
 
 			BeforeEach(func() {
-				Expect(k8sClient.Create(context.TODO(), ns)).Should(Succeed())
+				Expect(k8sClient.Create(ctx, ns)).Should(Succeed())
 			})
 
 			AfterEach(func() {
-				Expect(k8sClient.Delete(context.TODO(), ns)).Should(Succeed())
-				Eventually(k8sClient.Get(context.TODO(), client.ObjectKeyFromObject(ns), ns)).ShouldNot(Succeed())
+				Expect(k8sClient.Delete(ctx, ns)).Should(Succeed())
+				Eventually(k8sClient.Get(ctx, client.ObjectKeyFromObject(ns), ns)).ShouldNot(Succeed())
 			})
 		*/
 
@@ -116,12 +118,13 @@ var _ = Describe("LustreFileSystem Controller", func() {
 				Name: namespace,
 			}}
 
-			Expect(k8sClient.Create(context.TODO(), ns)).Should(Succeed())
+			Expect(k8sClient.Create(ctx, ns)).Should(Succeed())
 		})
 
 		validateCreateOccurredFn := func() {
+			By("verifying namespaces are ready")
 			Eventually(func(g Gomega) lusv1beta1.LustreFileSystemNamespaceAccessStatus {
-				g.Expect(k8sClient.Get(context.TODO(), client.ObjectKeyFromObject(fs), fs)).Should(Succeed())
+				g.Expect(k8sClient.Get(ctx, client.ObjectKeyFromObject(fs), fs)).Should(Succeed())
 				g.Expect(fs.Status.Namespaces).To(HaveKey(namespace))
 				g.Expect(fs.Status.Namespaces[namespace].Modes).To(HaveKey(mode))
 
@@ -132,14 +135,16 @@ var _ = Describe("LustreFileSystem Controller", func() {
 				"PersistentVolumeClaimRef": Not(BeNil()),
 			}))
 
+			By("verifying PV exists")
 			pv := &corev1.PersistentVolume{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: fs.PersistentVolumeName(namespace, mode),
 				},
 			}
 
-			Expect(k8sClient.Get(context.TODO(), client.ObjectKeyFromObject(pv), pv)).Should(Succeed())
+			Expect(k8sClient.Get(ctx, client.ObjectKeyFromObject(pv), pv)).Should(Succeed())
 
+			By("verifying PVC exists")
 			pvc := &corev1.PersistentVolumeClaim{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      fs.PersistentVolumeClaimName(namespace, mode),
@@ -147,7 +152,7 @@ var _ = Describe("LustreFileSystem Controller", func() {
 				},
 			}
 
-			Expect(k8sClient.Get(context.TODO(), client.ObjectKeyFromObject(pvc), pvc)).Should(Succeed())
+			Expect(k8sClient.Get(ctx, client.ObjectKeyFromObject(pvc), pvc)).Should(Succeed())
 		}
 
 		Context("with namespace and mode on create", func() {
@@ -165,6 +170,44 @@ var _ = Describe("LustreFileSystem Controller", func() {
 			It("creates pv/pvc and goes ready", func() {
 				validateCreateOccurredFn()
 			})
+
+			It("does not delete until only our finalizer is left", func() {
+				const finalizer = "test-finalizer"
+
+				By("adding outside finalizer")
+				Expect(retry.RetryOnConflict(retry.DefaultBackoff, func() error {
+					if err := k8sClient.Get(ctx, client.ObjectKeyFromObject(fs), fs); err != nil {
+						return err
+					}
+					controllerutil.AddFinalizer(fs, finalizer)
+					return k8sClient.Update(ctx, fs)
+				})).To(Succeed())
+
+				validateCreateOccurredFn()
+
+				By("deleting fs and expecting it to do nothing")
+				Expect(k8sClient.Delete(ctx, fs)).To(Succeed())
+				Consistently(func(g Gomega) error {
+					g.Expect(k8sClient.Get(ctx, client.ObjectKeyFromObject(fs), fs)).Should(Succeed())
+					validateCreateOccurredFn()
+					return nil
+				}, "3s").Should(Succeed(), "fs was deleted prior to removing outside finalizer")
+
+				By("removing the finalizer and verify its removal")
+				Expect(retry.RetryOnConflict(retry.DefaultBackoff, func() error {
+					if err := k8sClient.Get(ctx, client.ObjectKeyFromObject(fs), fs); err != nil {
+						return err
+					}
+					controllerutil.RemoveFinalizer(fs, finalizer)
+					return k8sClient.Update(ctx, fs)
+				})).To(Succeed())
+
+				Eventually(func(g Gomega) error {
+					return k8sClient.Get(ctx, client.ObjectKeyFromObject(fs), fs)
+				}).ShouldNot(Succeed())
+
+				fs = nil // we already cleaned up
+			})
 		})
 
 		Context("adding a namespace post create", func() {
@@ -172,7 +215,7 @@ var _ = Describe("LustreFileSystem Controller", func() {
 
 			JustBeforeEach(func() {
 				Eventually(func(g Gomega) error {
-					g.Expect(k8sClient.Get(context.TODO(), client.ObjectKeyFromObject(fs), fs)).Should(Succeed())
+					g.Expect(k8sClient.Get(ctx, client.ObjectKeyFromObject(fs), fs)).Should(Succeed())
 					Expect(fs.Spec.Namespaces).To(BeEmpty())
 
 					fs.Spec.Namespaces = map[string]lusv1beta1.LustreFileSystemNamespaceSpec{
@@ -183,7 +226,7 @@ var _ = Describe("LustreFileSystem Controller", func() {
 						},
 					}
 
-					return k8sClient.Update(context.TODO(), fs)
+					return k8sClient.Update(ctx, fs)
 				}).Should(Succeed())
 			})
 
@@ -195,16 +238,16 @@ var _ = Describe("LustreFileSystem Controller", func() {
 				validateCreateOccurredFn()
 
 				Eventually(func(g Gomega) error {
-					g.Expect(k8sClient.Get(context.TODO(), client.ObjectKeyFromObject(fs), fs)).Should(Succeed())
+					g.Expect(k8sClient.Get(ctx, client.ObjectKeyFromObject(fs), fs)).Should(Succeed())
 					g.Expect(fs.Spec.Namespaces).To(HaveKey(namespace))
 
 					delete(fs.Spec.Namespaces, namespace)
 
-					return k8sClient.Update(context.TODO(), fs)
+					return k8sClient.Update(ctx, fs)
 				}).Should(Succeed())
 
 				Eventually(func(g Gomega) map[string]lusv1beta1.LustreFileSystemNamespaceStatus {
-					g.Expect(k8sClient.Get(context.TODO(), client.ObjectKeyFromObject(fs), fs)).Should(Succeed())
+					g.Expect(k8sClient.Get(ctx, client.ObjectKeyFromObject(fs), fs)).Should(Succeed())
 					return fs.Status.Namespaces
 				}).ShouldNot(HaveKey(namespace))
 
@@ -218,7 +261,7 @@ var _ = Describe("LustreFileSystem Controller", func() {
 							},
 						}
 
-						return k8sClient.Get(context.TODO(), client.ObjectKeyFromObject(pvc), pvc)
+						return k8sClient.Get(ctx, client.ObjectKeyFromObject(pvc), pvc)
 					}).ShouldNot(Succeed())
 
 					Eventually(func() error {
@@ -228,7 +271,7 @@ var _ = Describe("LustreFileSystem Controller", func() {
 							},
 						}
 
-						return k8sClient.Get(context.TODO(), client.ObjectKeyFromObject(pv), pv)
+						return k8sClient.Get(ctx, client.ObjectKeyFromObject(pv), pv)
 					}).ShouldNot(Succeed())
 				*/
 			})

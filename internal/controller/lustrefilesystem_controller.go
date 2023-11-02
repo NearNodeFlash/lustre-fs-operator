@@ -86,6 +86,21 @@ func (r *LustreFileSystemReconciler) Reconcile(ctx context.Context, req ctrl.Req
 			return ctrl.Result{}, nil
 		}
 
+		// Check to see that only the lustre filesystem finalizer exists
+		onlyLustreFinalizer := func(o client.Object) bool {
+			f := o.GetFinalizers()
+			if len(f) == 1 && f[0] == finalizerLustreFileSystem {
+				return true
+			}
+			return false
+		}
+
+		// At this point, only our finalizer should be present before access is deleted. If not,
+		// requeue until they are gone.
+		if !onlyLustreFinalizer(fs) {
+			return ctrl.Result{Requeue: true}, nil
+		}
+
 		for namespace := range fs.Spec.Namespaces {
 			for _, mode := range fs.Spec.Namespaces[namespace].Modes {
 				if err := r.deleteAccess(ctx, fs, namespace, mode); err != nil {

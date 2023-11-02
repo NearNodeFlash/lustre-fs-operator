@@ -95,10 +95,9 @@ func (r *LustreFileSystemReconciler) Reconcile(ctx context.Context, req ctrl.Req
 			return false
 		}
 
-		// At this point, only our finalizer should be present before access is deleted. If not,
-		// requeue until they are gone.
+		// At this point, only our finalizer should be present before access is deleted.
 		if !onlyLustreFinalizer(fs) {
-			return ctrl.Result{Requeue: true}, nil
+			return ctrl.Result{}, nil
 		}
 
 		for namespace := range fs.Spec.Namespaces {

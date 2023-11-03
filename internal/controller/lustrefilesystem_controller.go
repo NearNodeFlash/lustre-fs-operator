@@ -82,6 +82,21 @@ func (r *LustreFileSystemReconciler) Reconcile(ctx context.Context, req ctrl.Req
 	// Check if the object is being deleted.
 	if !fs.GetDeletionTimestamp().IsZero() {
 
+		containsOtherFinalizers := func(o client.Object) bool {
+			for _, f := range o.GetFinalizers() {
+				if f != finalizerLustreFileSystem {
+					return true
+				}
+			}
+			return false
+		}
+
+		// Don't do anything until other finalizers are gone
+		if containsOtherFinalizers(fs) {
+			return ctrl.Result{}, nil
+		}
+
+		// Only remaining finalizer should be ours
 		if !controllerutil.ContainsFinalizer(fs, finalizerLustreFileSystem) {
 			return ctrl.Result{}, nil
 		}

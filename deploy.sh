@@ -26,7 +26,7 @@ KUSTOMIZE=$2
 OVERLAY_DIR=$3
 
 if [[ $CMD == 'deploy' ]]; then
-    $KUSTOMIZE build config/begin | kubectl apply -f -
+    $KUSTOMIZE build $OVERLAY_DIR | kubectl apply -f -
 
     # Deploy the ServiceMonitor resource if its CRD is found. The CRD would
     # have been installed by a metrics service such as Prometheus.

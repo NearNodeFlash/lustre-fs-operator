@@ -36,7 +36,9 @@ if [[ $CMD == 'deploy' ]]; then
 fi
 
 if [[ $CMD == 'undeploy' ]]; then
-    $KUSTOMIZE build config/prometheus | kubectl delete --ignore-not-found -f-
+    if kubectl get crd servicemonitors.monitoring.coreos.com > /dev/null 2>&1; then
+        $KUSTOMIZE build config/prometheus | kubectl delete --ignore-not-found -f-
+    fi
     $KUSTOMIZE build $OVERLAY_DIR | kubectl delete --ignore-not-found -f -
 fi
 

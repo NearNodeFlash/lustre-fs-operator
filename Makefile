@@ -59,7 +59,7 @@ IMAGE_TAG_BASE ?= ghcr.io/nearnodeflash/lustre-fs-operator
 # Image URL to use all building/pushing image targets
 
 # ENVTEST_K8S_VERSION refers to the version of kubebuilder assets to be downloaded by envtest binary.
-ENVTEST_K8S_VERSION = 1.26.0
+ENVTEST_K8S_VERSION = 1.28.0
 
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
 ifeq (,$(shell go env GOBIN))
@@ -107,7 +107,7 @@ vet: ## Run go vet against code.
 	go vet ./...
 
 # Explicitly specifying directories to test here to avoid running tests in .dws-operator for the time being.
-# ./controllers/...
+# ./internal/...
 # ./api/...
 # Below is a list of ginkgo test flags that may be used to generate different test patterns.
 # Specifying 'count=1' is the idiomatic way to disable test caching
@@ -168,17 +168,17 @@ container-unit-test: .version ## Build docker image with the manager and execute
 	${DOCKER} build -f Dockerfile --label $(IMAGE_TAG_BASE)-$@:$(VERSION)-$@ -t $(IMAGE_TAG_BASE)-$@:$(VERSION) --target testing .
 	${DOCKER} run --rm -t --name $@-lustre-fs-operator $(IMAGE_TAG_BASE)-$@:$(VERSION)
 
-TESTDIR ?= ./controllers/... ./api/...
+TESTDIR ?= ./internal/... ./api/...
 test: manifests generate fmt vet envtest ## Run tests.
 	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) -p path --bin-dir $(LOCALBIN))" go test $(TESTDIR) -coverprofile cover.out -args -ginkgo.v
 
 ##@ Build
 
 build: generate fmt vet ## Build manager binary.
-	go build -o bin/manager main.go
+	go build -o bin/manager cmd/main.go
 
 run: manifests generate fmt vet ## Run a controller from your host.
-	go run ./main.go
+	go run cmd/main.go
 
 docker-build: VERSION ?= $(shell cat .version)
 docker-build: .version ## Build docker image with the manager.
@@ -186,7 +186,7 @@ docker-build: .version ## Build docker image with the manager.
 
 edit-image: VERSION ?= $(shell cat .version)
 edit-image: .version kustomize ## Replace manager/kustomization.yaml image with name "controller" -> ghcr tagged container reference
-	cd config/manager && $(KUSTOMIZE) edit set image controller=$(IMAGE_TAG_BASE):$(VERSION)
+	$(KUSTOMIZE_IMAGE_TAG) config/begin default $(IMAGE_TAG_BASE) $(VERSION)
 
 docker-push: VERSION ?= $(shell cat .version)
 docker-push: .version ## Push docker image with the manager.
@@ -205,10 +205,10 @@ uninstall: manifests kustomize ## Uninstall CRDs from the K8s cluster specified 
 	$(KUSTOMIZE) build config/crd | kubectl delete --ignore-not-found -f -
 
 deploy: kustomize edit-image ## Deploy controller to the K8s cluster specified in ~/.kube/config.
-	$(KUSTOMIZE) build config/default | kubectl apply -f -
+	./deploy.sh deploy $(KUSTOMIZE) config/begin
 
-undeploy: kustomize edit-image ## Undeploy controller from the K8s cluster specified in ~/.kube/config.
-	$(KUSTOMIZE) build config/default | kubectl delete --ignore-not-found -f -
+undeploy: kustomize ## Undeploy controller from the K8s cluster specified in ~/.kube/config.
+	./deploy.sh undeploy $(KUSTOMIZE) config/default
 
 installer: kustomize edit-image
 
@@ -233,6 +233,7 @@ clean-bin:
 	fi
 
 ## Tool Binaries
+KUSTOMIZE_IMAGE_TAG ?= ./hack/make-kustomization.sh
 GO_INSTALL := ./github/cluster-api/scripts/go_install.sh
 KUSTOMIZE ?= $(LOCALBIN)/kustomize
 CONTROLLER_GEN ?= $(LOCALBIN)/controller-gen
@@ -248,19 +249,19 @@ CONVERSION_VERIFIER := $(LOCALBIN)/$(CONVERSION_VERIFIER_BIN)
 CONVERSION_VERIFIER_PKG := sigs.k8s.io/cluster-api/hack/tools/conversion-verifier
 
 ## Tool Versions
-KUSTOMIZE_VERSION ?= v4.5.7
-CONTROLLER_TOOLS_VERSION ?= v0.12.0
-CONVERSION_GEN_VER := v0.26.3
+KUSTOMIZE_VERSION ?= v5.1.1
+CONTROLLER_TOOLS_VERSION ?= v0.13.0
+CONVERSION_GEN_VER := v0.28.2
 
 # Can be "latest", but cannot be a tag, such as "v1.3.3".  However, it will
 # work with the short-form git commit rev that has been tagged.
 #CONVERSION_VERIFIER_VER := 09030092b # v1.3.3
-CONVERSION_VERIFIER_VER := 2c07717 # v1.4.0
+CONVERSION_VERIFIER_VER := 3290c5a # v1.5.2
 
 KUSTOMIZE_INSTALL_SCRIPT ?= "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh"
 .PHONY: kustomize
 kustomize: $(LOCALBIN) ## Download kustomize locally if necessary.
-	if [[ ! -s $(LOCALBIN)/kustomize || $$($(LOCALBIN)/kustomize version | awk '{print $$1}' | awk -F/ '{print $$2}') != $(KUSTOMIZE_VERSION) ]]; then \
+	if [[ ! -s $(LOCALBIN)/kustomize || ! $$($(LOCALBIN)/kustomize version) =~ $(KUSTOMIZE_VERSION) ]]; then \
 	  rm -f $(LOCALBIN)/kustomize && \
 	  { curl -s $(KUSTOMIZE_INSTALL_SCRIPT) | bash -s -- $(subst v,,$(KUSTOMIZE_VERSION)) $(LOCALBIN); }; \
 	fi

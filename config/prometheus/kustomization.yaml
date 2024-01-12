@@ -1,2 +1,5 @@
+# Adds namespace to all resources.
+namespace: nnf-lustre-fs-system
+
 resources:
 - monitor.yaml

@@ -23,12 +23,16 @@ import (
 	"context"
 
 	"k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/api/resource"
 	runtime "k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/log"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -59,6 +63,7 @@ type LustreFileSystemReconciler struct {
 //+kubebuilder:rbac:groups=lus.cray.hpe.com,resources=lustrefilesystems/finalizers,verbs=update
 //+kubebuilder:rbac:groups=core,resources=persistentvolumes,verbs=get;list;update;create;patch;delete;watch
 //+kubebuilder:rbac:groups=core,resources=persistentvolumeclaims,verbs=get;list;update;create;patch;delete;watch
+//+kubebuilder:rbac:groups=core,resources=namespaces,verbs=get;list;watch
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
@@ -70,7 +75,6 @@ type LustreFileSystemReconciler struct {
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.10.0/pkg/reconcile
 func (r *LustreFileSystemReconciler) Reconcile(ctx context.Context, req ctrl.Request) (result ctrl.Result, err error) {
-
 	fs := &lusv1beta1.LustreFileSystem{}
 	if err := r.Get(ctx, req.NamespacedName, fs); err != nil {
 		return ctrl.Result{}, client.IgnoreNotFound(err)
@@ -130,55 +134,66 @@ func (r *LustreFileSystemReconciler) Reconcile(ctx context.Context, req ctrl.Req
 	// Iterate over the access modes in the specification. For each namespace in that mode
 	// create a PV/PVC which can be used by pods in the same namespace.
 	for namespace := range fs.Spec.Namespaces {
+		namespacePresent := true
 
+		// If the namespace doesn't exist, set a flag so that we can appropriately set the status in the mode loop
+		ns := &corev1.Namespace{}
+		if err := r.Get(ctx, types.NamespacedName{Name: namespace}, ns); err != nil {
+			namespacePresent = false
+		}
+
+		// Create the Status Namespace map if empty
 		if fs.Status.Namespaces == nil {
 			fs.Status.Namespaces = make(map[string]lusv1beta1.LustreFileSystemNamespaceStatus)
 		}
 
+		// For each mode listed for the namespace
 		for _, mode := range fs.Spec.Namespaces[namespace].Modes {
-
+			// Create the Status Namespace Mode map if empty
 			if fs.Status.Namespaces[namespace].Modes == nil {
 				fs.Status.Namespaces[namespace] = lusv1beta1.LustreFileSystemNamespaceStatus{
 					Modes: make(map[corev1.PersistentVolumeAccessMode]lusv1beta1.LustreFileSystemNamespaceAccessStatus),
 				}
 			}
 
-			if _, found := fs.Status.Namespaces[namespace].Modes[mode]; !found {
-				fs.Status.Namespaces[namespace].Modes[mode] = lusv1beta1.LustreFileSystemNamespaceAccessStatus{
-					State: lusv1beta1.NamespaceAccessPending,
-				}
+			// Default the status as Pending in case the create/updates fail
+			fs.Status.Namespaces[namespace].Modes[mode] = lusv1beta1.LustreFileSystemNamespaceAccessStatus{
+				State: lusv1beta1.NamespaceAccessPending,
 			}
 
-			status := fs.Status.Namespaces[namespace].Modes[mode]
-			if status.State != lusv1beta1.NamespaceAccessReady {
-				pv, err := r.createOrUpdatePersistentVolume(ctx, fs, namespace, mode)
-				if err != nil {
-					return ctrl.Result{}, err
-				}
+			// If the namespace is not present or is not active, continue on and the status will be marked as Pending
+			if !namespacePresent || ns.Status.Phase != corev1.NamespaceActive {
+				continue
+			}
 
-				pvc, err := r.createOrUpdatePersistentVolumeClaim(ctx, fs, namespace, mode)
-				if err != nil {
-					return ctrl.Result{}, err
-				}
+			// Attempt to create the PV, if it fails, the status will be marked as Pending
+			pv, err := r.createOrUpdatePersistentVolume(ctx, fs, namespace, mode)
+			if err != nil {
+				return ctrl.Result{}, err
+			}
 
-				fs.Status.Namespaces[namespace].Modes[mode] = lusv1beta1.LustreFileSystemNamespaceAccessStatus{
-					State: lusv1beta1.NamespaceAccessReady,
-					PersistentVolumeRef: &corev1.LocalObjectReference{
-						Name: pv.Name,
-					},
-					PersistentVolumeClaimRef: &corev1.LocalObjectReference{
-						Name: pvc.Name,
-					},
-				}
+			// Attempt to create the PVC, if it fails, the status will be marked as Pending
+			pvc, err := r.createOrUpdatePersistentVolumeClaim(ctx, fs, namespace, mode)
+			if err != nil {
+				return ctrl.Result{}, err
+			}
+
+			// If we got this far, the status is Ready
+			fs.Status.Namespaces[namespace].Modes[mode] = lusv1beta1.LustreFileSystemNamespaceAccessStatus{
+				State: lusv1beta1.NamespaceAccessReady,
+				PersistentVolumeRef: &corev1.LocalObjectReference{
+					Name: pv.Name,
+				},
+				PersistentVolumeClaimRef: &corev1.LocalObjectReference{
+					Name: pvc.Name,
+				},
 			}
 		}
 	}
 
-	// Remove any resources that were removed from the spec
+	// Remove any resources that are not in the spec
 	for namespace := range fs.Status.Namespaces {
-
 		for mode := range fs.Status.Namespaces[namespace].Modes {
-
 			// Check if the provided namespace and mode are present in the specification
 			isPresentInSpec := func(namespace string, mode corev1.PersistentVolumeAccessMode) bool {
 				if ns, found := fs.Spec.Namespaces[namespace]; found {
@@ -342,9 +357,34 @@ func (r *LustreFileSystemReconciler) deleteAccess(ctx context.Context, fs *lusv1
 	return nil
 }
 
+// For a change with any namespace, we need to go through the list of all the lustrefilesystem resources
+func (r *LustreFileSystemReconciler) getLustreFileSystemsHandler(ctx context.Context, o client.Object) []reconcile.Request {
+	var res []reconcile.Request
+
+	filesystems := &lusv1beta1.LustreFileSystemList{}
+	if err := r.List(ctx, filesystems); err != nil && !meta.IsNoMatchError(err) {
+		return res
+	}
+
+	for _, lustre := range filesystems.Items {
+		res = append(res, reconcile.Request{
+			NamespacedName: types.NamespacedName{
+				Name:      lustre.GetName(),
+				Namespace: lustre.GetNamespace(),
+			},
+		})
+	}
+
+	return res
+}
+
 // SetupWithManager sets up the controller with the Manager.
 func (r *LustreFileSystemReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&lusv1beta1.LustreFileSystem{}).
+		Watches(
+			// Watch all namespaces for changes to ensure lustrefilesystem resources stay current
+			&corev1.Namespace{}, handler.EnqueueRequestsFromMapFunc(r.getLustreFileSystemsHandler),
+		).
 		Complete(r)
 }

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Copyright 2023 Hewlett Packard Enterprise Development LP
+# Copyright 2023-2024 Hewlett Packard Enterprise Development LP
 # Other additional copyright holders may be indicated within.
 #
 # The entirety of this work is licensed under the Apache License,
@@ -39,7 +39,8 @@ if [[ $CMD == 'undeploy' ]]; then
     if kubectl get crd servicemonitors.monitoring.coreos.com > /dev/null 2>&1; then
         $KUSTOMIZE build config/prometheus | kubectl delete --ignore-not-found -f-
     fi
-    $KUSTOMIZE build $OVERLAY_DIR | kubectl delete --ignore-not-found -f -
+    # Do not touch the namespace resource when deleting this service.
+    $KUSTOMIZE build $OVERLAY_DIR | yq eval 'select(.kind != "Namespace")' |  kubectl delete --ignore-not-found -f -
 fi
 
 exit 0

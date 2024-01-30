@@ -139,7 +139,11 @@ func (r *LustreFileSystemReconciler) Reconcile(ctx context.Context, req ctrl.Req
 		// If the namespace doesn't exist, set a flag so that we can appropriately set the status in the mode loop
 		ns := &corev1.Namespace{}
 		if err := r.Get(ctx, types.NamespacedName{Name: namespace}, ns); err != nil {
-			namespacePresent = false
+			if errors.IsNotFound(err) {
+				namespacePresent = false
+			} else {
+				return ctrl.Result{}, err
+			}
 		}
 
 		// Create the Status Namespace map if empty

@@ -26,6 +26,9 @@ jobs:
         fetch-depth: 0
         ref: ${{ github.event.pull_request.head.sha }}
 
+    - name: "Verify CRD conversions"
+      run: make verify
+
     - name: "Lowercase repository name for docker build"
       id: lowercase-repository-name
       run: echo "REPO_NAME=$(echo ${{ github.repository }} | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV

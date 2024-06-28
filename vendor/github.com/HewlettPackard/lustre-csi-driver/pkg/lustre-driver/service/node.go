@@ -1,5 +1,5 @@
 /*
- * Copyright 2021, 2022 Hewlett Packard Enterprise Development LP
+ * Copyright 2021, 2022, 2024 Hewlett Packard Enterprise Development LP
  * Other additional copyright holders may be indicated within.
  *
  * The entirety of this work is licensed under the Apache License,
@@ -21,11 +21,13 @@ package service
 
 import (
 	"os"
+	"strings"
 
+	log "github.com/sirupsen/logrus"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-	"k8s.io/utils/mount"
+	mount "k8s.io/mount-utils"
 
 	"github.com/container-storage-interface/spec/lib/go/csi"
 )
@@ -72,16 +74,34 @@ func (s *service) NodePublishVolume(
 		return nil, status.Errorf(codes.Internal, "NodePublishVolume - Mountpoint mkdir Failed: Error %v", err)
 	}
 
-	// 2. Perform the mount
+	// 2. Verify that it's not yet mounted.
 	mounter := mount.New("")
-	err = mounter.Mount(
-		req.GetVolumeId(),
-		req.GetTargetPath(),
-		req.GetVolumeCapability().GetMount().GetFsType(),
-		req.GetVolumeCapability().GetMount().GetMountFlags())
-
+	isMounted := false
+	mountpoints, err := mounter.List()
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "NodePublishVolume - Mount Failed: Error %v", err)
+		return nil, status.Errorf(codes.Internal, "NodePublishVolume - List mounts failed: Error %v", err)
+	}
+	for idx := range mountpoints {
+		if mountpoints[idx].Path == req.GetTargetPath() && mountpoints[idx].Device == req.GetVolumeId() {
+			log.WithField("source", req.GetVolumeId()).WithField("target", req.GetTargetPath()).Info("Already mounted")
+			isMounted = true
+			break
+		}
+	}
+
+	// 3. Perform the mount.
+	if !isMounted {
+		err := mounter.Mount(
+			req.GetVolumeId(),
+			req.GetTargetPath(),
+			req.GetVolumeCapability().GetMount().GetFsType(),
+			req.GetVolumeCapability().GetMount().GetMountFlags())
+
+		if err != nil {
+			return nil, status.Errorf(codes.Internal, "NodePublishVolume - Mount Failed: Error %v", err)
+		} else {
+			log.WithField("source", req.GetVolumeId()).WithField("target", req.GetTargetPath()).Info("Mounted")
+		}
 	}
 
 	return &csi.NodePublishVolumeResponse{}, nil
@@ -101,10 +121,19 @@ func (s *service) NodeUnpublishVolume(
 	}
 
 	mounter := mount.New("")
-	err := mounter.Unmount(req.GetTargetPath())
+	notMountPoint, err := mount.IsNotMountPoint(mounter, req.GetTargetPath())
+	if err != nil && strings.Contains(err.Error(), "no such") {
+		// consider it unmounted
+	} else if err != nil {
+		return nil, status.Errorf(codes.Internal, "NodeUnpublishVolume - Mount point check Failed: Error %v", err)
+	} else if !notMountPoint {
+		err := mounter.Unmount(req.GetTargetPath())
 
-	if err != nil {
-		return nil, status.Errorf(codes.Internal, "NodeUnpublishVolume - Unmount Failed: Error %v", err)
+		if err != nil {
+			return nil, status.Errorf(codes.Internal, "NodeUnpublishVolume - Unmount Failed: Error %v", err)
+		} else {
+			log.WithField("target", req.GetTargetPath()).Info("Unmounted")
+		}
 	}
 
 	return &csi.NodeUnpublishVolumeResponse{}, nil

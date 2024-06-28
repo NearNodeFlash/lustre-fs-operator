@@ -1,8 +1,8 @@
-# github.com/DataWorkflowServices/dws v0.0.1-0.20231031201121-13a5a69a969e
+# github.com/DataWorkflowServices/dws v0.0.1-0.20240628142816-167b50149e2d
 ## explicit; go 1.19
 github.com/DataWorkflowServices/dws/utils/updater
-# github.com/HewlettPackard/lustre-csi-driver v0.0.0-20220623192103-4ce53adacc95
-## explicit; go 1.17
+# github.com/HewlettPackard/lustre-csi-driver v0.0.1-0.20240430143029-c559e76880e8
+## explicit; go 1.19
 github.com/HewlettPackard/lustre-csi-driver/pkg/lustre-driver/service
 # github.com/beorn7/perks v1.0.1
 ## explicit; go 1.11
@@ -171,6 +171,9 @@ github.com/prometheus/common/model
 github.com/prometheus/procfs
 github.com/prometheus/procfs/internal/fs
 github.com/prometheus/procfs/internal/util
+# github.com/sirupsen/logrus v1.9.0
+## explicit; go 1.13
+github.com/sirupsen/logrus
 # github.com/spf13/pflag v1.0.5
 ## explicit; go 1.12
 github.com/spf13/pflag
@@ -640,6 +643,9 @@ k8s.io/kube-openapi/pkg/schemamutation
 k8s.io/kube-openapi/pkg/spec3
 k8s.io/kube-openapi/pkg/util/proto
 k8s.io/kube-openapi/pkg/validation/spec
+# k8s.io/mount-utils v0.24.2
+## explicit; go 1.16
+k8s.io/mount-utils
 # k8s.io/utils v0.0.0-20230406110748-d93618cff8a2
 ## explicit; go 1.18
 k8s.io/utils/buffer
@@ -650,7 +656,6 @@ k8s.io/utils/integer
 k8s.io/utils/internal/third_party/forked/golang/net
 k8s.io/utils/io
 k8s.io/utils/keymutex
-k8s.io/utils/mount
 k8s.io/utils/net
 k8s.io/utils/pointer
 k8s.io/utils/strings/slices

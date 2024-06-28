@@ -3,8 +3,8 @@ module github.com/NearNodeFlash/lustre-fs-operator
 go 1.19
 
 require (
-	github.com/DataWorkflowServices/dws v0.0.1-0.20231031201121-13a5a69a969e
-	github.com/HewlettPackard/lustre-csi-driver v0.0.0-20220623192103-4ce53adacc95
+	github.com/DataWorkflowServices/dws v0.0.1-0.20240628142816-167b50149e2d
+	github.com/HewlettPackard/lustre-csi-driver v0.0.1-0.20240430143029-c559e76880e8
 	github.com/google/go-cmp v0.5.9
 	github.com/google/gofuzz v1.2.0
 	github.com/google/uuid v1.3.0
@@ -48,6 +48,7 @@ require (
 	github.com/prometheus/client_model v0.4.0 // indirect
 	github.com/prometheus/common v0.44.0 // indirect
 	github.com/prometheus/procfs v0.10.1 // indirect
+	github.com/sirupsen/logrus v1.9.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 	go.uber.org/zap v1.25.0 // indirect
@@ -71,6 +72,7 @@ require (
 	k8s.io/component-base v0.28.1 // indirect
 	k8s.io/klog/v2 v2.100.1 // indirect
 	k8s.io/kube-openapi v0.0.0-20230717233707-2695361300d9 // indirect
+	k8s.io/mount-utils v0.24.2 // indirect
 	k8s.io/utils v0.0.0-20230406110748-d93618cff8a2 // indirect
 	sigs.k8s.io/json v0.0.0-20221116044647-bc3834ca7abd // indirect
 	sigs.k8s.io/structured-merge-diff/v4 v4.2.3 // indirect

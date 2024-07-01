@@ -21,6 +21,7 @@ package controller
 
 import (
 	"context"
+	"os"
 	"path/filepath"
 	"testing"
 
@@ -61,6 +62,10 @@ var _ = BeforeSuite(func() {
 	ctx, cancel = context.WithCancel(context.TODO())
 
 	By("bootstrapping test environment")
+	var err error
+
+	err = os.Setenv("LUSTRE_CSI_SERVICE_NAME", "lustre-csi.hpe.com")
+	Expect(err).NotTo(HaveOccurred())
 
 	// See https://github.com/kubernetes-sigs/controller-runtime/issues/1882
 	// about getting the conversion webhook to register properly.
@@ -68,7 +73,6 @@ var _ = BeforeSuite(func() {
 	// before calling envtest.Start().
 	// Then add the scheme to envtest.CRDInstallOptions.
 
-	var err error
 	err = lusv1alpha1.AddToScheme(scheme.Scheme)
 	Expect(err).NotTo(HaveOccurred())
 

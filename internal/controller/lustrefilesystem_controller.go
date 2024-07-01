@@ -1,5 +1,5 @@
 /*
- * Copyright 2021-2023 Hewlett Packard Enterprise Development LP
+ * Copyright 2021-2024 Hewlett Packard Enterprise Development LP
  * Other additional copyright holders may be indicated within.
  *
  * The entirety of this work is licensed under the Apache License,
@@ -21,6 +21,7 @@ package controller
 
 import (
 	"context"
+	"os"
 
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -38,7 +39,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/DataWorkflowServices/dws/utils/updater"
-	"github.com/HewlettPackard/lustre-csi-driver/pkg/lustre-driver/service"
 	lusv1beta1 "github.com/NearNodeFlash/lustre-fs-operator/api/v1beta1"
 )
 
@@ -309,7 +309,7 @@ func (r *LustreFileSystemReconciler) createOrUpdatePersistentVolume(ctx context.
 
 		pv.Spec.PersistentVolumeSource = corev1.PersistentVolumeSource{
 			CSI: &corev1.CSIPersistentVolumeSource{
-				Driver:       service.Name,
+				Driver:       os.Getenv("LUSTRE_CSI_SERVICE_NAME"),
 				FSType:       "lustre",
 				VolumeHandle: fs.Spec.MgsNids + ":/" + fs.Spec.Name,
 			},

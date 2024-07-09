@@ -2,10 +2,8 @@ module github.com/NearNodeFlash/lustre-fs-operator
 
 go 1.21
 
-replace github.com/DataWorkflowServices/dws => ../dws
-
 require (
-	github.com/DataWorkflowServices/dws v0.0.1-0.20240628142816-167b50149e2d
+	github.com/DataWorkflowServices/dws v0.0.1-0.20240709160056-4a27e5a8dc76
 	github.com/google/go-cmp v0.6.0
 	github.com/google/gofuzz v1.2.0
 	github.com/google/uuid v1.3.0

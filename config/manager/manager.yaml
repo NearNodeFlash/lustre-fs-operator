@@ -31,6 +31,11 @@ spec:
         - --leader-elect
         image: controller:latest
         name: manager
+        env:
+          # The service name of the lustre-csi-driver.
+          # From its pkg/lustre-driver/service/service.go.
+          - name: LUSTRE_CSI_SERVICE_NAME
+            value: "lustre-csi.hpe.com"
         securityContext:
           allowPrivilegeEscalation: false
         livenessProbe:

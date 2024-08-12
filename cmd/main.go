@@ -1,5 +1,5 @@
 /*
- * Copyright 2021-2023 Hewlett Packard Enterprise Development LP
+ * Copyright 2021-2024 Hewlett Packard Enterprise Development LP
  * Other additional copyright holders may be indicated within.
  *
  * The entirety of this work is licensed under the Apache License,
@@ -90,9 +90,11 @@ func main() {
 		setupLog.Error(err, "unable to create controller", "controller", "LustreFileSystem")
 		os.Exit(1)
 	}
-	if err = (&lusv1beta1.LustreFileSystem{}).SetupWebhookWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create webhook", "webhook", "LustreFileSystem")
-		os.Exit(1)
+	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
+		if err = (&lusv1beta1.LustreFileSystem{}).SetupWebhookWithManager(mgr); err != nil {
+			setupLog.Error(err, "unable to create webhook", "webhook", "LustreFileSystem")
+			os.Exit(1)
+		}
 	}
 	//+kubebuilder:scaffold:builder
 

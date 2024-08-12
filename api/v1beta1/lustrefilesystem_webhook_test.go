@@ -1,5 +1,5 @@
 /*
- * Copyright 2021-2023 Hewlett Packard Enterprise Development LP
+ * Copyright 2021-2024 Hewlett Packard Enterprise Development LP
  * Other additional copyright holders may be indicated within.
  *
  * The entirety of this work is licensed under the Apache License,
@@ -32,7 +32,13 @@ import (
 // These tests are written in BDD-style using Ginkgo framework. Refer to
 // http://onsi.github.io/ginkgo to learn more.
 
-var _ = Describe("LustreFileSystemWebhook", func() {
+var _ = Describe("LustreFileSystem Webhook", func() {
+
+	// We already have api/<spoke_ver>/conversion_test.go that is
+	// digging deep into the conversion routines, and we have
+	// internal/controllers/conversion_test.go that is verifing that the
+	// conversion webhook is hooked up to those routines.
+
 	var (
 		key                    types.NamespacedName
 		createdFS, retrievedFS *LustreFileSystem

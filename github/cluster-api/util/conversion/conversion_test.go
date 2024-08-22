@@ -29,17 +29,19 @@ import (
 )
 
 var (
-	oldGVK = schema.GroupVersionKind{
+	oldLustreFileSystemGVK = schema.GroupVersionKind{
 		Group:   lusv1beta1.GroupVersion.Group,
 		Version: "v1old",
 		Kind:    "LustreFileSystem",
 	}
+
+	// +crdbumper:scaffold:gvk
 )
 
 func TestMarshalData(t *testing.T) {
 	g := NewWithT(t)
 
-	t.Run("should write source object to destination", func(*testing.T) {
+	t.Run("LustreFileSystem should write source object to destination", func(*testing.T) {
 		src := &lusv1beta1.LustreFileSystem{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: "test-1",
@@ -55,7 +57,7 @@ func TestMarshalData(t *testing.T) {
 		}
 
 		dst := &unstructured.Unstructured{}
-		dst.SetGroupVersionKind(oldGVK)
+		dst.SetGroupVersionKind(oldLustreFileSystemGVK)
 		dst.SetName("test-1")
 
 		g.Expect(MarshalData(src, dst)).To(Succeed())
@@ -69,7 +71,7 @@ func TestMarshalData(t *testing.T) {
 		g.Expect(dst.GetAnnotations()[DataAnnotation]).To(ContainSubstring("/lus/w0"))
 	})
 
-	t.Run("should append the annotation", func(*testing.T) {
+	t.Run("LustreFileSystem should append the annotation", func(*testing.T) {
 		src := &lusv1beta1.LustreFileSystem{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: "test-1",
@@ -85,19 +87,21 @@ func TestMarshalData(t *testing.T) {
 		g.Expect(MarshalData(src, dst)).To(Succeed())
 		g.Expect(dst.GetAnnotations()).To(HaveLen(2))
 	})
+
+	// +crdbumper:scaffold:marshaldata
 }
 
 func TestUnmarshalData(t *testing.T) {
 	g := NewWithT(t)
 
-	t.Run("should return false without errors if annotation doesn't exist", func(*testing.T) {
+	t.Run("LustreFileSystem should return false without errors if annotation doesn't exist", func(*testing.T) {
 		src := &lusv1beta1.LustreFileSystem{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: "test-1",
 			},
 		}
 		dst := &unstructured.Unstructured{}
-		dst.SetGroupVersionKind(oldGVK)
+		dst.SetGroupVersionKind(oldLustreFileSystemGVK)
 		dst.SetName("test-1")
 
 		ok, err := UnmarshalData(src, dst)
@@ -105,9 +109,9 @@ func TestUnmarshalData(t *testing.T) {
 		g.Expect(err).ToNot(HaveOccurred())
 	})
 
-	t.Run("should return true when a valid annotation with data exists", func(*testing.T) {
+	t.Run("LustreFileSystem should return true when a valid annotation with data exists", func(*testing.T) {
 		src := &unstructured.Unstructured{}
-		src.SetGroupVersionKind(oldGVK)
+		src.SetGroupVersionKind(oldLustreFileSystemGVK)
 		src.SetName("test-1")
 		src.SetAnnotations(map[string]string{
 			DataAnnotation: "{\"metadata\":{\"name\":\"test-1\",\"creationTimestamp\":null,\"labels\":{\"label1\":\"\"}},\"spec\":{},\"status\":{}}",
@@ -129,9 +133,9 @@ func TestUnmarshalData(t *testing.T) {
 		g.Expect(dst.GetAnnotations()).To(BeEmpty())
 	})
 
-	t.Run("should clean the annotation on successful unmarshal", func(*testing.T) {
+	t.Run("LustreFileSystem should clean the annotation on successful unmarshal", func(*testing.T) {
 		src := &unstructured.Unstructured{}
-		src.SetGroupVersionKind(oldGVK)
+		src.SetGroupVersionKind(oldLustreFileSystemGVK)
 		src.SetName("test-1")
 		src.SetAnnotations(map[string]string{
 			"annotation-1": "",
@@ -151,6 +155,8 @@ func TestUnmarshalData(t *testing.T) {
 		g.Expect(src.GetAnnotations()).ToNot(HaveKey(DataAnnotation))
 		g.Expect(src.GetAnnotations()).To(HaveLen(1))
 	})
+
+	// +crdbumper:scaffold:unmarshaldata
 }
 
 // Just touch ginkgo, so it's here to interpret any ginkgo args from

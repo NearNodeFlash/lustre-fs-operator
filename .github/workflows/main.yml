@@ -26,8 +26,15 @@ jobs:
         fetch-depth: 0
         ref: ${{ github.event.pull_request.head.sha }}
 
+    - name: "Verify auto-generated files"
+      run: |
+          make manifests generate generate-go-conversions
+          if [[ $(git status -s | wc -l) -gt 0 ]]; then \
+              git status; exit 1; \
+          fi
+
     - name: "Verify CRD conversions"
-      run: make verify
+      run: make verify-conversions
 
     - name: "Lowercase repository name for docker build"
       id: lowercase-repository-name

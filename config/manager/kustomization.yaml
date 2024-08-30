@@ -17,5 +17,4 @@ kind: Kustomization
 
 images:
 - name: controller
-  newName: ghcr.io/nearnodeflash/lustre-fs-operator
-  newTag: 0.1.4
+  newTag: 0.1.5

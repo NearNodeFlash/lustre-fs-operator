@@ -1,5 +1,5 @@
-github.com/DataWorkflowServices/dws v0.0.1-0.20240906193959-13d9956b3a4d h1:La5B/c881hNcY2fNnnkNhQYzxDBB5Ny5NM3pK753fkM=
-github.com/DataWorkflowServices/dws v0.0.1-0.20240906193959-13d9956b3a4d/go.mod h1:6MrEEHISskyooSKcKU6R3mFqH6Yh6KzWgajhcw2s+nM=
+github.com/DataWorkflowServices/dws v0.0.1-0.20240913193141-737bcd946a02 h1:ZidnleTEjdZX6geLAWTw3NMEsO8YLEQ9ubPx1fKGDeg=
+github.com/DataWorkflowServices/dws v0.0.1-0.20240913193141-737bcd946a02/go.mod h1:6MrEEHISskyooSKcKU6R3mFqH6Yh6KzWgajhcw2s+nM=
 github.com/benbjohnson/clock v1.1.0/go.mod h1:J11/hYXuz8f4ySSvYwY0FKfm+ezbsZBKZxNJlLklBHA=
 github.com/benbjohnson/clock v1.3.0 h1:ip6w0uFQkncKQ979AypyG0ER7mqUSBdKLOgAle/AT8A=
 github.com/benbjohnson/clock v1.3.0/go.mod h1:J11/hYXuz8f4ySSvYwY0FKfm+ezbsZBKZxNJlLklBHA=

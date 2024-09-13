@@ -3,7 +3,7 @@ module github.com/NearNodeFlash/lustre-fs-operator
 go 1.21
 
 require (
-	github.com/DataWorkflowServices/dws v0.0.1-0.20240820212105-5950825b3d74
+	github.com/DataWorkflowServices/dws v0.0.1-0.20240913193141-737bcd946a02
 	github.com/google/go-cmp v0.6.0
 	github.com/google/gofuzz v1.2.0
 	github.com/google/uuid v1.3.0

@@ -57,5 +57,19 @@ spec:
           requests:
             cpu: 100m
             memory: 20Mi
+        volumeMounts:
+          - name: localtime
+            mountPath: /etc/localtime
+            readOnly: true
+          - name: tzdata
+            mountPath: /usr/share/zoneinfo
+            readOnly: true
+      volumes:
+        - name: localtime
+          hostPath:
+            path: /etc/localtime
+        - name: tzdata
+          hostPath:
+            path: /usr/share/zoneinfo
       serviceAccountName: controller-manager
       terminationGracePeriodSeconds: 10

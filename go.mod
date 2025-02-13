@@ -1,6 +1,6 @@
 module github.com/NearNodeFlash/lustre-fs-operator
 
-go 1.21
+go 1.22
 
 require (
 	github.com/DataWorkflowServices/dws v0.0.1-0.20250123184816-8c112709f939

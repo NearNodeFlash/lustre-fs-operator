@@ -1,4 +1,4 @@
-# Copyright 2021-2024 Hewlett Packard Enterprise Development LP
+# Copyright 2021-2025 Hewlett Packard Enterprise Development LP
 # Other additional copyright holders may be indicated within.
 #
 # The entirety of this work is licensed under the Apache License,
@@ -273,7 +273,7 @@ CONVERSION_VERIFIER_PKG := sigs.k8s.io/cluster-api/hack/tools/conversion-verifie
 
 ## Tool Versions
 KUSTOMIZE_VERSION ?= v5.1.1
-CONTROLLER_TOOLS_VERSION ?= v0.14.0
+CONTROLLER_TOOLS_VERSION ?= v0.16.5
 CONVERSION_GEN_VER := v0.30.2
 
 # Can be "latest", but cannot be a tag, such as "v1.3.3".  However, it will
@@ -351,7 +351,7 @@ verify-conversions: $(CONVERSION_VERIFIER)  ## Verifies expected API conversion 
 .PHONY: envtest
 envtest: $(ENVTEST) ## Download envtest-setup locally if necessary.
 $(ENVTEST): $(LOCALBIN)
-	test -s $(LOCALBIN)/setup-envtest || GOBIN=$(LOCALBIN) go install sigs.k8s.io/controller-runtime/tools/setup-envtest@v0.0.0-20240320141353-395cfc7486e6
+	test -s $(LOCALBIN)/setup-envtest || GOBIN=$(LOCALBIN) go install sigs.k8s.io/controller-runtime/tools/setup-envtest@release-0.17
 
 .PHONY: bundle
 bundle: manifests kustomize edit-image ## Generate bundle manifests and metadata, then validate generated files.

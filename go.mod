@@ -4,8 +4,6 @@ go 1.22.0
 
 toolchain go1.22.5
 
-replace github.com/DataWorkflowServices/dws => ../dws
-
 require (
 	github.com/DataWorkflowServices/dws v0.0.1-0.20250123184816-8c112709f939
 	github.com/google/go-cmp v0.6.0

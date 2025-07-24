@@ -1,11 +1,9 @@
 module github.com/NearNodeFlash/lustre-fs-operator
 
-go 1.22.0
-
-toolchain go1.22.5
+go 1.23.9
 
 require (
-	github.com/DataWorkflowServices/dws v0.0.1-0.20250610194327-bc91fef8e840
+	github.com/DataWorkflowServices/dws v0.0.1-0.20250723211939-273b728aedb8
 	github.com/google/go-cmp v0.6.0
 	github.com/google/gofuzz v1.2.0
 	github.com/google/uuid v1.3.0

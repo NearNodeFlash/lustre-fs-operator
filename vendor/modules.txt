@@ -1,4 +1,4 @@
-# github.com/DataWorkflowServices/dws v0.0.1-0.20250814202824-57ff186bb93f
+# github.com/DataWorkflowServices/dws v0.0.1-0.20250825211240-934831fe76d9
 ## explicit; go 1.23.9
 github.com/DataWorkflowServices/dws/utils/updater
 # github.com/beorn7/perks v1.0.1

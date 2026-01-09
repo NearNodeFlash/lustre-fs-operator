@@ -279,7 +279,8 @@ CONVERSION_GEN_VER := v0.31.5
 # Can be "latest", but cannot be a tag, such as "v1.3.3".  However, it will
 # work with the short-form git commit rev that has been tagged.
 #CONVERSION_VERIFIER_VER := 09030092b # v1.3.3
-CONVERSION_VERIFIER_VER := b0284d8b # v1.7.3
+# CONVERSION_VERIFIER_VER := b0284d8b # v1.7.3
+CONVERSION_VERIFIER_VER := 7b1cf365 # v1.11.3
 
 KUSTOMIZE_INSTALL_SCRIPT ?= "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh"
 .PHONY: kustomize

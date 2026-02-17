@@ -44,6 +44,13 @@ WORKDIR /workspace
 COPY hack/ hack/
 COPY Makefile .
 
+# Install setup-envtest and download the envtest binaries (etcd, kube-apiserver)
+# so they are available when 'make test' runs.
+RUN go install sigs.k8s.io/controller-runtime/tools/setup-envtest@release-0.17 && \
+    mkdir -p bin && \
+    cp $(go env GOPATH)/bin/setup-envtest bin/ && \
+    bin/setup-envtest use --use-deprecated-gcs=false 1.29.0 --bin-dir bin/
+
 ENTRYPOINT ["make", "test"]
 
 # Use distroless as minimal base image to package the manager binary
